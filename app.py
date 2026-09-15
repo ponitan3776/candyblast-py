@@ -1652,6 +1652,11 @@ def user_profile(user_id_param):
 
 
 # ===================== 起動処理 =====================
+
+@app.get('/')
+def serve_index():
+    return app.send_static_file('index.html')
+
 def start_app():
     try:
         init_db()
