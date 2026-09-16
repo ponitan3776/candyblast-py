@@ -2358,9 +2358,10 @@ const titleEl = document.querySelector('.title');
         else duelResultNoteEl.textContent = '対決結果の送信に失敗しました。';
       });
     }
-    overlayEl.classList.add('show');
-    // ゲーム終了時にサーバーへ送信（既にリアルタイムで送っているが、念のため）
-    if (authToken) syncToServer();
+
+overlayEl.classList.add('show');
+    // ゲーム終了時にサーバーへ送信（今のゲームの実際のスコアを送る）
+    if (authToken) syncToServer(score);
     syncPlayTime();
   }
 
@@ -2655,22 +2656,27 @@ restartBtn.addEventListener('click', ()=>{
   accountBtn.addEventListener('click', ()=>{ renderAuthModal(); modalOverlay.classList.add('show'); });
 
   // ===================== サーバー同期（修正：ベストスコアをモード別に送信） =====================
-  async function syncToServer(){
+
+// playedScore … 「今のゲームで実際に出した点」。
+  //   渡されたときだけ fromPlay を付けて、管理者コマンドの仮スコアを上書きできるようにする。
+  async function syncToServer(playedScore){
     if(!authToken) return;
     try{
+      const payload = {
+        bestScore: (typeof playedScore === 'number') ? playedScore : (bestScores[currentMode] || 0),
+        coins,
+        skins: ownedSkins,
+        equippedSkin,
+        quests: activeQuests,
+        mode: currentMode,
+        size: SIZE,
+        playTime
+      };
+      if(typeof playedScore === 'number') payload.fromPlay = true;
       const r = await fetch(`${API_BASE_URL}/api/sync`, {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authToken}` },
-        body: JSON.stringify({
-          bestScore: bestScores[currentMode] || 0,  // 現在のモードのベストを送信
-          coins,
-          skins: ownedSkins,
-          equippedSkin,
-          quests: activeQuests,
-          mode: currentMode,
-          size: SIZE,
-          playTime
-        })
+        body: JSON.stringify(payload)
       });
       if(r.ok){
         const data = await r.json();
@@ -4109,12 +4115,9 @@ restartBtn.addEventListener('click', ()=>{
     newBestNoteEl.textContent = isNewBest ? '🎉 ハイスコア更新！' : 'お疲れさまでした！';
     coinEarnedNoteEl.textContent = earned>0 ? `🪙 +${earned} コイン獲得！` : '';
     overlayEl.classList.add('show');
-    if(authToken){
-      fetch(`${API_BASE_URL}/api/sync`, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authToken}` },
-        body: JSON.stringify({ bestScore: tetrisBest, coins, mode:'tetris', size:8, playTime })
-      }).catch(()=>{});
+if(authToken){
+      // ★ここが今回の要。tetrisBest ではなく「今のゲームで出した点」を送る。
+      syncToServer(tetrisScore);
     }
     syncPlayTime();
   }
