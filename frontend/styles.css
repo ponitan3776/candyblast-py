@@ -61,14 +61,14 @@
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 8px;
-    transition: background 0.2s ease;
+transition: filter 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 3px;
     line-height: 1.3;
     white-space:nowrap;
   }
-  .title:hover{ background:rgba(255,255,255,0.08); }
+.title:hover{ filter: brightness(1.25); }
   .title .back-arrow{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; font-size:0.9em; }
   .mode-badge{ font-size:9px; color:var(--text-dim); font-weight:700; letter-spacing:0.2px; white-space:nowrap; }
   .header-right{ display:flex; align-items:center; gap:4px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; row-gap:6px; }
