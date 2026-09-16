@@ -571,10 +571,10 @@ def ranking():
             valid_modes = ['soft', 'baked', 'hard', 'extreme', 'tetris', 'timeattack']
             if mode not in valid_modes:
                 mode = 'soft'
-            top_query = f"""
+top_query = f"""
                 SELECT id, best_scores->>'{mode}' AS value FROM users
                 WHERE best_scores->>'{mode}' IS NOT NULL AND best_scores->>'{mode}' != '0'
-                ORDER BY (best_scores->>'{mode}')::int DESC LIMIT 50
+                ORDER BY (best_scores->>'{mode}')::bigint DESC LIMIT 50
             """
             count_query = f"SELECT COUNT(*) AS count FROM users WHERE best_scores->>'{mode}' IS NOT NULL AND best_scores->>'{mode}' != '0'"
         top_rows = db_query(top_query)
@@ -827,7 +827,7 @@ def run_event_scheduler():
             rank_rows = db_query(f"""
                 SELECT id FROM users
                 WHERE best_scores->>'{mode}' IS NOT NULL AND best_scores->>'{mode}' != '0'
-                ORDER BY (best_scores->>'{mode}')::int DESC LIMIT 1 OFFSET %s
+                ORDER BY (best_scores->>'{mode}')::bigint DESC LIMIT 1 OFFSET %s
             """, [ev['rank_position'] - 1])
             if rank_rows:
                 target_id = rank_rows[0]['id']
