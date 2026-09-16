@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>わんわんだふるごりらっぱ</title>
+<meta name="app-version" content="2026.09.07-2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="titleScreen" class="title-screen">
+  <div class="title-card">
+    <div class="title-logo">🍬 キャンディブラスト</div>
+    <div class="title-sub">CANDY BLAST</div>
+    <button class="title-menu-btn primary" id="titleStartBtn">▶ ゲーム開始</button>
+    <button class="title-menu-btn" id="titleTimeAttackBtn">⏱ タイムアタック</button>
+    <button class="title-menu-btn" id="titleWeeklyBtn">🎲 週替わりチャレンジ</button>
+    <button class="title-menu-btn" id="titleGachaBtn">🎰 ガチャ</button>
+    <button class="title-menu-btn" id="titleBattlePassBtn">🎫 バトルパス</button>
+    <button class="title-menu-btn" id="titleRecordsBtn">🏆 記録・実績</button>
+    <button class="title-menu-btn" id="titleSettingsBtn">⚙ 設定</button>
+    <div class="title-version-row">
+      <span>Ver. 2.0.2</span>
+      <button id="titleChangelogBtn">📢 更新履歴</button>
+    </div>
+  </div>
+</div>
+
+<div id="versionBadge">Ver. 2.0.2</div>
+<div id="changelogPanel"></div>
+<div id="eventCountdownBadge" style="display:none;"><span id="eventCountdownText">⏰ --:--:--</span></div>
+
+<div id="app">
+  <header>
+    <div class="title-wrap">
+      <div class="title" id="backButton">🏠 メニューに戻る</div>
+      <div class="mode-badge" id="modeBadge"></div>
+    </div>
+    <div class="header-right">
+      <div class="pill-btn" id="questBtn">📋</div>
+      <div class="icon-btn" id="settingsBtn" title="設定">⚙️</div>
+      <div class="icon-btn" id="soundBtn">🔊</div>
+      <div class="icon-btn" id="accountBtn">👤</div>
+      <div class="icon-btn" id="rankingBtn" title="ランキング">🏆</div>
+      <div class="icon-btn" id="adminPanelBtn" title="管理者パネル" style="display:none;">🔧</div>
+      <div class="icon-btn" id="friendsBtn" title="フレンド・DM">
+        👥
+        <span class="unread-dot" id="friendsDot"></span>
+        <span class="mention-badge" id="friendsMentionBadge">0</span>
+      </div>
+      <div class="icon-btn" id="chatBtn" title="チャット">
+        💬
+        <span class="unread-dot" id="chatDot"></span>
+        <span class="mention-badge" id="chatMentionBadge">0</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-card"><div class="label">score</div><div class="value" id="scoreVal">0</div></div>
+    <div class="score-card best"><div class="label">best</div><div class="value" id="bestVal">0</div></div>
+    <div class="score-card coins"><div class="label">🪙 coin</div><div class="value" id="coinVal">0</div></div>
+    <div class="score-card timer" id="timeAttackCard" style="display:none;"><div class="label">⏱ time</div><div class="value" id="timeAttackVal">0:60</div></div>
+  </div>
+
+  <div id="board-wrap">
+    <div id="board"></div>
+    <div class="combo-text" id="comboText"></div>
+  </div>
+
+  <div id="tray"></div>
+
+  <div id="tetris-wrap">
+    <div class="tetris-layout">
+      <div id="tetrisBoard"></div>
+      <div class="tetris-side">
+        <div>
+          <div class="tetris-next-label">HOLD</div>
+          <div id="tetrisHoldBox"></div>
+        </div>
+        <div>
+          <div class="tetris-next-label">NEXT</div>
+          <div id="tetrisNext"></div>
+        </div>
+        <div class="tetris-info">
+          <div>LEVEL<b id="tetrisLevel">1</b></div>
+          <div>LINES<b id="tetrisLines">0</b></div>
+        </div>
+        <div class="tetris-help-btn" id="tetrisHelpBtn">❓ 操作説明</div>
+        <div class="tetris-help-panel" id="tetrisHelpPanel"></div>
+      </div>
+      <div class="combo-text" id="tetrisComboText"></div>
+    </div>
+    <div class="tetris-controls">
+      <div class="tetris-btn hold" id="tBtnHold">⇄ HOLD</div>
+      <div class="tetris-btn" id="tBtnRotate">⟳</div>
+      <div class="tetris-btn" id="tBtnLeft">◀</div>
+      <div class="tetris-btn" id="tBtnRight">▶</div>
+      <div class="tetris-btn wide" id="tBtnSoft">▼ ソフトドロップ</div>
+      <div class="tetris-btn wide hard" id="tBtnHard">⤓ ハードドロップ（一気に落とす）</div>
+    </div>
+  </div>
+</div>
+
+<div id="ghost" style="display:none;"></div>
+
+<div id="overlay">
+  <div class="panel-box">
+    <h2>🔥 ゲームオーバー</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <div class="sub" id="newBestNote">お疲れさまでした！</div>
+    <div class="sub" id="coinEarnedNote" style="color:var(--gold); font-weight:700;"></div>
+    <div class="sub" id="duelResultNote" style="color:var(--mint); font-weight:800; margin-top:6px;"></div>
+    <button class="primary-btn" id="restartBtn">もう一度</button>
+  </div>
+</div>
+
+<div id="modalOverlay">
+  <div class="panel-box" id="modalBox" style="position:relative;">
+    <button class="close-x" id="modalClose">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
