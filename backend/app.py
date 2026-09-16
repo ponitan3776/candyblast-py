@@ -571,7 +571,7 @@ def ranking():
             valid_modes = ['soft', 'baked', 'hard', 'extreme', 'tetris', 'timeattack']
             if mode not in valid_modes:
                 mode = 'soft'
-top_query = f"""
+            top_query = f"""
                 SELECT id, best_scores->>'{mode}' AS value FROM users
                 WHERE best_scores->>'{mode}' IS NOT NULL AND best_scores->>'{mode}' != '0'
                 ORDER BY (best_scores->>'{mode}')::bigint DESC LIMIT 50
