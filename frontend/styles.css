@@ -52,10 +52,12 @@
     padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)); gap:8px; }
   header{ width:100%; max-width:520px; display:flex; align-items:center; justify-content:space-between; padding:4px 6px; gap:8px; flex-wrap:wrap; row-gap:6px; }
   .title-wrap{ display:flex; flex-direction:column; gap:1px; flex-shrink:0; }
-  .title{ 
+.title{ 
     font-family:'Baloo 2', sans-serif; font-weight:800; font-size:clamp(13px, 2.8vw, 18px);
+    color:var(--gold);                             /* ★保険の色（背景が効かなかった時用） */
     background:linear-gradient(90deg, var(--gold), var(--pink)); 
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;           /* ★color ではなくこちらを使う */
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 8px;
