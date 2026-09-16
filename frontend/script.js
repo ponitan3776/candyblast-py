@@ -2397,9 +2397,11 @@ const titleEl = document.querySelector('.title');
       duelResultNoteEl.textContent = `送信に失敗しました: ${err.message}`;
     }
   }
-  restartBtn.addEventListener('click', ()=>{
+
+restartBtn.addEventListener('click', ()=>{
     overlayEl.classList.remove('show');
     if(currentMode==='tetris'){ restartTetris(); return; }
+    if(currentMode==='timeattack'){ startTimeAttackMode(); return; }   // ★追加
     score = 0; streak = 0; noClearStreak = 0;
     updateScoreUI();
     initBoard();
