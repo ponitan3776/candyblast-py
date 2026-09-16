@@ -568,7 +568,7 @@ def ranking():
     rtype = request.args.get('type', 'score')
     try:
 
-if rtype == 'playtime':
+        if rtype == 'playtime':
             top_query = 'SELECT id, play_time AS value FROM users WHERE play_time IS NOT NULL AND play_time > 0 ORDER BY play_time DESC LIMIT 50'
             count_query = 'SELECT COUNT(*) AS count FROM users WHERE play_time IS NOT NULL AND play_time > 0'
         elif rtype == 'coins':
