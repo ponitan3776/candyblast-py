@@ -1,0 +1,32 @@
+services:
+  # ===== バックエンド (Flask API) =====
+  - type: web
+    name: candyblast-server
+    env: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -w 1 -b 0.0.0.0:$PORT app:app"
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # 既存のPostgresの Internal Database URL を貼り付けてください
+      - key: JWT_SECRET
+        sync: false   # 前のNode版と同じ値にすると、既存ユーザーのログイン状態(トークン)を維持できます
+      - key: DISCORD_WEBHOOK_AUTH
+        sync: false
+      - key: DISCORD_WEBHOOK_LOGIN
+        sync: false
+      - key: DISCORD_WEBHOOK_FEATURE_REQUEST
+        sync: false
+      - key: DISCORD_WEBHOOK_BUG_REPORT
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  # ===== フロントエンド (静的サイト) =====
+  - type: web
+    name: candyblast-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: ""
+    staticPublishPath: .
