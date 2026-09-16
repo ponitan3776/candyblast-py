@@ -468,7 +468,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
         {bg:'linear-gradient(135deg,#FF3DDB 0%,#B03DFF 50%,#3D0A5C 100%)'},
         {bg:'linear-gradient(135deg,#E8D9FF 0%,#D63DFF 50%,#5C0A8A 100%)'},
         {bg:'linear-gradient(135deg,#3D0A5C 0%,#7D3DFF 50%,#E8D9FF 100%)'}
-      ] }
+      ] },
 
 { id:'gacha_abyssleviathan', name:'🌊 アビス・リヴァイアサン', price:0, gacha:true, gachaEffect:true,
       desc:'深淵の底より姿を現す海の覇王。その身に宿す大海の力は、見る者の魂を呑み込む。',
