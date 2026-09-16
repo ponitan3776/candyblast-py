@@ -1895,9 +1895,9 @@ function issueNewQuest(excludePoolIds){
     modalContent.dataset.mode = 'appsettings';
     modalContent.innerHTML = `
       <h2 style="color:var(--gold);">⚙ 設定</h2>
-      <div class="settings-row">
-        <span>🔊 音量</span>
-        <input type="range" id="volumeSlider" min="0" max="100" value="${Math.round(soundVolume*100)}">
+<div class="settings-row">
+        <span>🔊 音量 <b id="volumeValueLabel" style="color:var(--gold);">${Math.round(soundVolume*100)}%</b></span>
+        <input type="range" id="volumeSlider" min="0" max="200" value="${Math.round(soundVolume*100)}">
       </div>
       <div class="settings-row">
         <span>🌙 ダークモード</span>
@@ -1915,8 +1915,14 @@ function issueNewQuest(excludePoolIds){
       renderFeedbackModal('request');
     });
     document.getElementById('volumeSlider').addEventListener('input', (e)=>{
-      soundVolume = parseInt(e.target.value,10)/100;
+      const pct = parseInt(e.target.value, 10);
+      soundVolume = pct / 100;
+      bgmVolume = pct / 100;
+      const label = document.getElementById('volumeValueLabel');
+      if(label) label.textContent = pct + '%';
       saveAppSettings();
+      saveBgmSettings();
+      applyBgmVolume();
     });
     document.getElementById('volumeSlider').addEventListener('change', ()=> playSound('coin'));
     document.getElementById('darkModeToggle').addEventListener('change', (e)=>{
@@ -2206,7 +2212,10 @@ const titleEl = document.querySelector('.title');
   let bgmEnabled = true;
   let bgmVolume = 0.4;
   let bgmCurrentFile = null;
-  let bgmStarted = false;
+let bgmStarted = false;
+  // ★200%音量対応: BGMをWeb Audio経由で増幅するためのノード
+  let bgmGainNode = null;
+  let bgmSourceNode = null;
 
   async function loadBgmSettings(){
     try{
@@ -2235,20 +2244,41 @@ const titleEl = document.querySelector('.title');
     btn.title = (bgmEnabled && bgmCurrentFile) ? 'BGM: 再生中' : 'BGM: 停止中';
   }
 
-function playBgmTrack(file){
+function ensureBgmGainNode(){
+    // audioCtxがまだ無ければ作らない(初回ユーザー操作で unlockAudio される)
+    if(!audioCtx) return null;
+    if(!bgmGainNode){
+      bgmGainNode = audioCtx.createGain();
+      bgmGainNode.connect(audioCtx.destination);
+    }
+    return bgmGainNode;
+  }
+
+  function playBgmTrack(file){
     stopBgm();
     if(!file) return;
     bgmCurrentFile = file;
-    // この再生インスタンスをローカル変数で持っておくことで、
-    // 途中で別のBGMに切り替わったときに古いインスタンスの
-    // コールバックが bgmAudio を誤ってnullに上書きするのを防ぐ
     const thisAudio = new Audio('bgm/' + file);
     bgmAudio = thisAudio;
-    thisAudio.volume = bgmVolume;
     thisAudio.loop = true;
+
+    unlockAudio();
+    const gainNode = ensureBgmGainNode();
+    if(gainNode){
+      try{
+        const source = audioCtx.createMediaElementSource(thisAudio);
+        source.connect(gainNode);
+        gainNode.gain.value = bgmVolume;
+        bgmSourceNode = source;
+      }catch(err){
+        thisAudio.volume = Math.min(1, bgmVolume);
+      }
+    } else {
+      thisAudio.volume = Math.min(1, bgmVolume);
+    }
+
     thisAudio.addEventListener('error', ()=>{
       console.warn('BGM読み込み失敗:', file);
-      // まだ自分がカレントのときだけ参照を消す
       if(bgmAudio === thisAudio) bgmAudio = null;
       updateMusicButton();
     });
@@ -2256,8 +2286,6 @@ function playBgmTrack(file){
       bgmStarted = true;
       updateMusicButton();
     }).catch(()=>{
-      // ★重要★ この時点で別のBGMに切り替わっていたら、
-      // 新しいBGMの参照を消してはいけない
       if(bgmAudio === thisAudio) bgmAudio = null;
       updateMusicButton();
     });
@@ -2265,6 +2293,10 @@ function playBgmTrack(file){
   }
 
   function stopBgm(){
+    if(bgmSourceNode){
+      try{ bgmSourceNode.disconnect(); }catch(err){}
+      bgmSourceNode = null;
+    }
     if(bgmAudio){
       try{ bgmAudio.pause(); }catch(err){}
       bgmAudio = null;
@@ -2283,7 +2315,11 @@ function playBgmTrack(file){
   }
 
   function applyBgmVolume(){
-    if(bgmAudio) bgmAudio.volume = bgmVolume;
+    if(bgmGainNode){
+      bgmGainNode.gain.value = bgmVolume;
+    } else if(bgmAudio){
+      bgmAudio.volume = Math.min(1, bgmVolume);
+    }
   }
 
   // ===================== サウンド =====================
