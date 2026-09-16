@@ -1,6 +1,6 @@
 (function(){
   // ===================== 設定 =====================
-const API_BASE_URL = 'https://pinkyburst.onrender.com';
+  const API_BASE_URL = 'https://candyblast-server.onrender.com';
 
   // ===================== 永続化ストレージ(localStorageベース) =====================
   // このアプリはRender上の通常のWebページとして動作するため、
@@ -4254,6 +4254,86 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     renderAppSettingsModal();
     modalOverlay.classList.add('show');
   });
+
+document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
+    hideTitleScreen();
+    renderOtherGamesModal();
+    modalOverlay.classList.add('show');
+  });
+
+// ===================== 🎮 別のゲーム =====================
+
+// ===================== 🎮 別のゲーム =====================
+  const OTHER_GAMES = [
+    { emoji:'⚫', name:'オセロ', desc:'白と黒の石をひっくり返して陣取り！', url:'' },
+    { emoji:'⚪', name:'五目並べ', desc:'縦・横・斜めに5つ並べたら勝ち！', url:'' },
+    { emoji:'❌', name:'まるばつゲーム', desc:'3×3のマスで○×を並べる定番ゲーム', url:'' },
+  ];
+
+  function renderOtherGamesModal(){
+    modalContent.dataset.mode = 'othergames';
+    let html = `
+      <h2 style="color:var(--gold);">🎮 別のゲーム</h2>
+      <div class="sub" style="margin-bottom:10px;">他のゲームも続々追加予定！お楽しみに。</div>
+    `;
+    if(OTHER_GAMES.length === 0){
+      html += `<div class="empty-hint">現在公開中のゲームはありません。</div>`;
+    } else {
+      OTHER_GAMES.forEach((g, i)=>{
+        const ready = !!g.url;
+        html += `
+          <div class="quest-item other-game-item" data-gameidx="${i}"
+               style="cursor:${ready?'pointer':'default'}; ${ready?'':'opacity:0.55;'}">
+            <div class="qtitle">${g.emoji} ${g.name}${ready?'':' <span class="coin-tag">準備中</span>'}</div>
+            <div class="sub" style="margin-top:4px;">${g.desc}</div>
+          </div>`;
+      });
+    }
+    html += `
+      <div class="coming-soon">
+        <span class="cs-line"></span>
+        <span class="cs-text">Coming Soon…</span>
+        <span class="cs-line"></span>
+      </div>
+    `;
+    modalContent.innerHTML = html;
+
+    modalContent.querySelectorAll('.other-game-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const g = OTHER_GAMES[parseInt(el.dataset.gameidx, 10)];
+        if(g && g.url) window.open(g.url, '_blank', 'noopener');
+      });
+    });
+  }
+
+  function renderOtherGamesModal(){
+    modalContent.dataset.mode = 'othergames';
+    let html = `
+      <h2 style="color:var(--gold);">🎮 別のゲーム</h2>
+      <div class="sub" style="margin-bottom:10px;">他のゲームも遊んでみてね！</div>
+    `;
+    if(OTHER_GAMES.length === 0){
+      html += `<div class="empty-hint">現在公開中のゲームはありません。</div>`;
+    } else {
+      OTHER_GAMES.forEach((g, i)=>{
+        const ready = !!g.url;
+        html += `
+          <div class="quest-item other-game-item" data-gameidx="${i}"
+               style="cursor:${ready?'pointer':'default'}; ${ready?'':'opacity:0.5;'}">
+            <div class="qtitle">${g.emoji} ${g.name}${ready?'':' <span class="coin-tag">準備中</span>'}</div>
+            <div class="sub" style="margin-top:4px;">${g.desc}</div>
+          </div>`;
+      });
+    }
+    modalContent.innerHTML = html;
+
+    modalContent.querySelectorAll('.other-game-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const g = OTHER_GAMES[parseInt(el.dataset.gameidx, 10)];
+        if(g && g.url) window.open(g.url, '_blank', 'noopener');
+      });
+    });
+  }
 
   // ===================== 更新履歴 / バージョン表示 =====================
   const CHANGELOG = [
