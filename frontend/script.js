@@ -1,7 +1,7 @@
 (function(){
   // ===================== 設定 =====================
   const API_BASE_URL = 'https://candyblast-server.onrender.com';
-  // ===================== 🎵 BGM設定 =====================
+// ===================== 🎵 BGM設定 =====================
   const BGM_TRACKS = [
     'bgm/moonlight.mp3',
   ];
@@ -2154,6 +2154,92 @@
     modalOverlay.classList.add('show');
   });
 
+// ===================== 🎵 BGMプレイヤー =====================
+  const STORAGE_BGM = 'candyblast-bgm-v1';
+  let bgmAudio = null;
+  let bgmEnabled = true;
+  let bgmVolume = 0.4;
+  let bgmTrackIndex = 0;
+  let bgmStarted = false;
+
+  async function loadBgmSettings(){
+    try{
+      const res = await appStorage.get(STORAGE_BGM, false);
+      if(res && res.value){
+        const p = JSON.parse(res.value);
+        if(typeof p.enabled === 'boolean') bgmEnabled = p.enabled;
+        if(typeof p.volume === 'number') bgmVolume = p.volume;
+        if(typeof p.trackIndex === 'number') bgmTrackIndex = p.trackIndex;
+      }
+    }catch(err){}
+    updateMusicButton();
+  }
+  async function saveBgmSettings(){
+    try{
+      await appStorage.set(STORAGE_BGM, JSON.stringify({
+        enabled:bgmEnabled, volume:bgmVolume, trackIndex:bgmTrackIndex
+      }), false);
+    }catch(err){}
+  }
+
+  function updateMusicButton(){
+    const btn = document.getElementById('musicBtn');
+    if(!btn) return;
+    btn.textContent = bgmEnabled ? '🎵' : '🔇';
+    btn.title = bgmEnabled ? 'BGM ON' : 'BGM OFF';
+  }
+
+  function nextBgmTrack(){
+    bgmTrackIndex = (bgmTrackIndex + 1) % BGM_TRACKS.length;
+    saveBgmSettings();
+  }
+
+  function startBgm(){
+    if(!bgmEnabled) return;
+    if(BGM_TRACKS.length === 0) return;
+    if(bgmAudio) return;
+
+    bgmAudio = new Audio(BGM_TRACKS[bgmTrackIndex]);
+    bgmAudio.volume = bgmVolume;
+    bgmAudio.loop = BGM_TRACKS.length === 1;
+
+    bgmAudio.addEventListener('ended', ()=>{
+      if(BGM_TRACKS.length > 1){
+        nextBgmTrack();
+        bgmAudio = null;
+        startBgm();
+      }
+    });
+    bgmAudio.addEventListener('error', ()=>{
+      bgmAudio = null;
+    });
+
+    bgmAudio.play().catch(()=>{ bgmAudio = null; });
+    bgmStarted = true;
+  }
+
+  function stopBgm(){
+    if(bgmAudio){
+      try{ bgmAudio.pause(); }catch(err){}
+      bgmAudio = null;
+    }
+  }
+
+  function toggleBgm(){
+    bgmEnabled = !bgmEnabled;
+    if(bgmEnabled){
+      startBgm();
+    } else {
+      stopBgm();
+    }
+    updateMusicButton();
+    saveBgmSettings();
+  }
+
+  function applyBgmVolume(){
+    if(bgmAudio) bgmAudio.volume = bgmVolume;
+  }
+
   // ===================== サウンド =====================
   let audioCtx = null;
   function unlockAudio(){
@@ -2228,7 +2314,23 @@
     soundOn = !soundOn;
     soundBtn.textContent = soundOn ? '🔊' : '🔇';
   });
-  document.body.addEventListener('pointerdown', unlockAudio, { once:true });
+  // 🎵 BGMボタン
+  document.getElementById('musicBtn').addEventListener('click', ()=>{
+    unlockAudio();
+    toggleBgm();
+  });
+
+  // 最初の1タップでBGM自動開始(ブラウザの自動再生制限対策)
+  function autoStartBgmOnFirstInteraction(){
+    if(bgmStarted) return;
+    if(!bgmEnabled) return;
+    startBgm();
+    document.removeEventListener('pointerdown', autoStartBgmOnFirstInteraction);
+    document.removeEventListener('click', autoStartBgmOnFirstInteraction);
+  }
+  document.addEventListener('pointerdown', autoStartBgmOnFirstInteraction);
+  document.addEventListener('click', autoStartBgmOnFirstInteraction);
+document.body.addEventListener('pointerdown', unlockAudio, { once:true });
 
   // ===================== ゲームオーバー =====================
   function endGame(){
@@ -4472,9 +4574,10 @@ const OTHER_GAMES = [
   });
 
   // ===================== 初期化 =====================
-  (async function start(){
+(async function start(){
     await loadCustomBackground();
     await loadAppSettings();
+    await loadBgmSettings();   // ★これを追加
     await loadBest();
     await loadBestScores();  // モード別ベスト読み込み
     await loadCoins();
