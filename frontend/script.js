@@ -1,6 +1,6 @@
 (function(){
-  // ===================== 設定 =====================
-  const API_BASE_URL = 'https://candyblast-server.onrender.com';
+
+const API_BASE_URL = 'https://pinkyburst.onrender.com';
 
 // ===================== 🎵 音楽ライブラリ =====================
   // 曲を追加するときは、この配列に1行足すだけ！
@@ -2321,17 +2321,21 @@
     modalOverlay.classList.add('show');
   });
 
-  // 最初の1タップでBGM自動開始(ブラウザの自動再生制限対策)
+// 最初の1タップでBGM自動開始(ブラウザの自動再生制限対策)
   function autoStartBgmOnFirstInteraction(){
     if(bgmStarted) return;
     if(!bgmEnabled) return;
-    startBgm();
+    // まだ曲が選ばれていなければ、ライブラリの先頭を自動選択
+    if(!bgmCurrentFile && MUSIC_LIBRARY.length > 0){
+      bgmCurrentFile = MUSIC_LIBRARY[0].file;
+    }
+    if(bgmCurrentFile) playBgmTrack(bgmCurrentFile);
     document.removeEventListener('pointerdown', autoStartBgmOnFirstInteraction);
     document.removeEventListener('click', autoStartBgmOnFirstInteraction);
   }
   document.addEventListener('pointerdown', autoStartBgmOnFirstInteraction);
   document.addEventListener('click', autoStartBgmOnFirstInteraction);
-document.body.addEventListener('pointerdown', unlockAudio, { once:true });
+  document.body.addEventListener('pointerdown', unlockAudio, { once:true });
 
   // ===================== ゲームオーバー =====================
   function endGame(){
@@ -4469,7 +4473,7 @@ const OTHER_GAMES = [
     { emoji:'❌', name:'まるばつゲーム', desc:'3×3のマスで○×を並べる定番ゲーム', url:'https://tic-tac-toe-1ixl.onrender.com' },
   ];
 
-  function renderOtherGamesModal(){
+function renderOtherGamesModal(){
     modalContent.dataset.mode = 'othergames';
     let html = `
       <h2 style="color:var(--gold);">🎮 別のゲーム</h2>
@@ -4495,16 +4499,6 @@ const OTHER_GAMES = [
         <span class="cs-line"></span>
       </div>
     `;
-    modalContent.innerHTML = html;
-
-    modalContent.querySelectorAll('.other-game-item').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const g = OTHER_GAMES[parseInt(el.dataset.gameidx, 10)];
-        if(g && g.url) window.open(g.url, '_blank', 'noopener');
-      });
-    });
-  }
-
     modalContent.innerHTML = html;
 
     modalContent.querySelectorAll('.other-game-item').forEach(el=>{
