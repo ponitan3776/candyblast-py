@@ -1572,17 +1572,19 @@ function ensurePlayable(){
   async function saveCoins(val){ try{ await appStorage.set(STORAGE_COINS, String(val), false); }catch(err){} }
 
   // ===================== クエスト =====================
+  // desc を「目標値 n を受け取って説明文を返す関数」にすることで、
+  // スケーリング後の実際の目標値が説明文に自動で反映される。
   const QUEST_POOL = [
-    { id:'singleScore400', desc:'1回のプレイでスコア4000点以上を叩き出す', statKey:'bestSingleGameScore', target:4000, reward:50 },
-    { id:'tripleClear', desc:'1回の設置で3ライン以上同時に消す(トリプルクリア)', statKey:'tripleClearCount', target:1, reward:70 },
-    { id:'comboStreak4', desc:'1回のプレイでコンボストリークを4連続つなげる', statKey:'maxComboStreak', target:4, reward:65 },
-    { id:'lines25', desc:'ラインを合計25本消す', statKey:'linesCleared', target:25, reward:55 },
-    { id:'hardMode1', desc:'「硬い」以上の難易度でゲームを1回プレイし切る', statKey:'hardModeGamesPlayed', target:1, reward:45 },
-    { id:'pieces60', desc:'ピースを合計60個配置する', statKey:'piecesPlaced', target:60, reward:40 },
-    { id:'score600total', desc:'合計スコアを6000点稼ぐ', statKey:'scoreEarned', target:6000, reward:50 },
-    { id:'noClearStreak10', desc:'ラインを消さずにピースを10個連続で置く我慢比べ', statKey:'maxNoClearStreak', target:10, reward:60 },
-    { id:'bigPiece5', desc:'5マス以上の大きいブロックを5個配置する', statKey:'bigPiecesPlaced', target:5, reward:55 },
-    { id:'play3', desc:'ゲームを3回プレイする', statKey:'gamesPlayed', target:3, reward:30 }
+    { id:'singleScore400', desc:(n)=>`1回のプレイでスコア${n}点以上を叩き出す`, statKey:'bestSingleGameScore', target:4000, reward:50 },
+    { id:'tripleClear', desc:(n)=>`3ライン以上同時に消す(トリプルクリア)を${n}回成功させる`, statKey:'tripleClearCount', target:1, reward:70 },
+    { id:'comboStreak4', desc:(n)=>`1回のプレイでコンボストリークを${n}連続つなげる`, statKey:'maxComboStreak', target:4, reward:65 },
+    { id:'lines25', desc:(n)=>`ラインを合計${n}本消す`, statKey:'linesCleared', target:25, reward:55 },
+    { id:'hardMode1', desc:(n)=>`「硬い」以上の難易度でゲームを${n}回プレイし切る`, statKey:'hardModeGamesPlayed', target:1, reward:45 },
+    { id:'pieces60', desc:(n)=>`ピースを合計${n}個配置する`, statKey:'piecesPlaced', target:60, reward:40 },
+    { id:'score600total', desc:(n)=>`合計スコアを${n}点稼ぐ`, statKey:'scoreEarned', target:6000, reward:50 },
+    { id:'noClearStreak10', desc:(n)=>`ラインを消さずにピースを${n}個連続で置く我慢比べ`, statKey:'maxNoClearStreak', target:10, reward:60 },
+    { id:'bigPiece5', desc:(n)=>`5マス以上の大きいブロックを${n}個配置する`, statKey:'bigPiecesPlaced', target:5, reward:55 },
+    { id:'play3', desc:(n)=>`ゲームを${n}回プレイする`, statKey:'gamesPlayed', target:3, reward:30 }
   ];
 
   function pickDailyQuests(){
@@ -1604,19 +1606,23 @@ function ensurePlayable(){
   function scaledReward(base){
     return Math.round(base * (1 + questsCompletedCount * 0.15));
   }
-  function issueNewQuest(excludePoolIds){
+
+function issueNewQuest(excludePoolIds){
     const pool = QUEST_POOL.filter(q=>!excludePoolIds.includes(q.id));
     const poolItem = (pool.length ? pool : QUEST_POOL)[Math.floor(Math.random()*(pool.length ? pool.length : QUEST_POOL.length))];
+    const targetVal = scaledTarget(poolItem.target);
     return {
       poolId: poolItem.id,
-      desc: poolItem.desc,
+      // 説明文を「実際の目標値 targetVal」で生成する（表示と目標のズレをなくす）
+      desc: (typeof poolItem.desc === 'function') ? poolItem.desc(targetVal) : poolItem.desc,
       statKey: poolItem.statKey,
       baseline: dailyStats[poolItem.statKey] || 0,
-      target: scaledTarget(poolItem.target),
+      target: targetVal,
       reward: scaledReward(poolItem.reward),
       claimed: false
     };
   }
+
   function ensureActiveQuests(){
     while(activeQuests.length < 3){
       const excludeIds = activeQuests.map(q=>q.poolId);
@@ -1637,6 +1643,15 @@ function ensurePlayable(){
         activeQuests = Array.isArray(parsed.active) ? parsed.active : [];
       }
     }catch(err){}
+    // 保存済みのクエストの説明文を、実際の目標値で再生成する
+    // (古いバージョンで保存された「3回プレイする」等の表示と実際の target がズレているのを直す)
+    activeQuests = activeQuests.map(q => {
+      const poolItem = QUEST_POOL.find(p => p.id === q.poolId);
+      if (poolItem && typeof poolItem.desc === 'function') {
+        return { ...q, desc: poolItem.desc(q.target) };
+      }
+      return q;
+    });
     ensureActiveQuests();
     await saveDailyQuests();
   }
