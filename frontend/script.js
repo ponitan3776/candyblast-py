@@ -469,6 +469,52 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
         {bg:'linear-gradient(135deg,#E8D9FF 0%,#D63DFF 50%,#5C0A8A 100%)'},
         {bg:'linear-gradient(135deg,#3D0A5C 0%,#7D3DFF 50%,#E8D9FF 100%)'}
       ] }
+
+{ id:'gacha_abyssleviathan', name:'🌊 アビス・リヴァイアサン', price:0, gacha:true, gachaEffect:true,
+      desc:'深淵の底より姿を現す海の覇王。その身に宿す大海の力は、見る者の魂を呑み込む。',
+      vars:{ '--bg-deep':'#020a14','--bg-deep2':'#041426','--panel':'#062240','--panel-light':'#09305c',
+        '--gold':'#5CFFE0','--coral':'#00D4FF','--mint':'#3DFFE0','--blue':'#0099FF','--purple':'#5C6EFF',
+        '--pink':'#3DDFFF','--lime':'#7FFFE0','--text':'#E0FBFF','--text-dim':'#7FA8C9' },
+      titleGrad:'linear-gradient(90deg,#5CFFE0,#0099FF,#5C6EFF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#00D4FF 0%,#0099FF 40%,#062240 100%)'},
+        {bg:'linear-gradient(135deg,#5CFFE0 0%,#00D4FF 50%,#0099FF 100%)'},
+        {bg:'linear-gradient(135deg,#3DDFFF 0%,#5C6EFF 50%,#062240 100%)'},
+        {bg:'linear-gradient(135deg,#7FFFE0 0%,#3DFFE0 50%,#0099FF 100%)'},
+        {bg:'linear-gradient(135deg,#0099FF 0%,#3DDFFF 50%,#5CFFE0 100%)'},
+        {bg:'linear-gradient(135deg,#5C6EFF 0%,#0099FF 50%,#00D4FF 100%)'},
+        {bg:'linear-gradient(135deg,#00D4FF 0%,#5CFFE0 50%,#3DDFFF 100%)'}
+      ] },
+    { id:'gacha_thunderlord', name:'⚡ サンダーロード', price:0, gacha:true, gachaEffect:true,
+      desc:'天を裂き、地を焦がす雷霆の支配者。その一撃は神々さえも打ち倒す。',
+      vars:{ '--bg-deep':'#0a0518','--bg-deep2':'#140a2e','--panel':'#1f1048','--panel-light':'#2e1a66',
+        '--gold':'#FFE838','--coral':'#FFB800','--mint':'#FFEB66','--blue':'#B066FF','--purple':'#8833FF',
+        '--pink':'#FFD93D','--lime':'#FFE838','--text':'#FFF8E0','--text-dim':'#B8A0D9' },
+      titleGrad:'linear-gradient(90deg,#FFE838,#B066FF,#8833FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE838 0%,#FFB800 40%,#8833FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFF8E0 0%,#FFE838 50%,#B066FF 100%)'},
+        {bg:'linear-gradient(135deg,#B066FF 0%,#8833FF 50%,#1f1048 100%)'},
+        {bg:'linear-gradient(135deg,#FFD93D 0%,#FFB800 50%,#8833FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFEB66 0%,#FFE838 50%,#B066FF 100%)'},
+        {bg:'linear-gradient(135deg,#8833FF 0%,#B066FF 50%,#FFE838 100%)'},
+        {bg:'linear-gradient(135deg,#FFE838 0%,#FFB800 50%,#B066FF 100%)'}
+      ] },
+    { id:'gacha_celestialblossom', name:'🌸 セレスティアル・ブロッサム', price:0, gacha:true, gachaEffect:true,
+      desc:'天界の庭園に咲き誇る聖なる花。その花びらに触れた者は、永遠の祝福を受けるという。',
+      vars:{ '--bg-deep':'#1a0a18','--bg-deep2':'#2e1228','--panel':'#451c3a','--panel-light':'#5c2850',
+        '--gold':'#FFD9A8','--coral':'#FFA8D9','--mint':'#FFE0F0','--blue':'#E0A8FF','--purple':'#C87FE8',
+        '--pink':'#FFA8D9','--lime':'#FFEBE0','--text':'#FFF5F8','--text-dim':'#D9A8C8' },
+      titleGrad:'linear-gradient(90deg,#FFD9A8,#FFA8D9,#E0A8FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE5F0 0%,#FFA8D9 40%,#E0A8FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFF5E0 0%,#FFD9A8 50%,#FFA8D9 100%)'},
+        {bg:'linear-gradient(135deg,#FFA8D9 0%,#E0A8FF 50%,#C87FE8 100%)'},
+        {bg:'linear-gradient(135deg,#FFEBE0 0%,#FFE5F0 50%,#E0A8FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFD9A8 0%,#FFA8D9 50%,#C87FE8 100%)'},
+        {bg:'linear-gradient(135deg,#E0A8FF 0%,#C87FE8 50%,#FFD9A8 100%)'},
+        {bg:'linear-gradient(135deg,#FFE5F0 0%,#E0A8FF 50%,#FFD9A8 100%)'}
+      ] },
   ];
   SKINS.push(...GACHA_SKINS);
 
