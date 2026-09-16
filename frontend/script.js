@@ -78,12 +78,10 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     e.preventDefault();
   }, { passive: false });
 
-  // ===================== 戻るボタン =====================
+// ===================== 戻るボタン =====================
   document.getElementById('backButton').addEventListener('click', function(e) {
     e.preventDefault();
-    if (confirm('メニューに戻りますか？\n現在のゲームの進行は保存されません。')) {
-      showTitleScreen();
-    }
+    showTitleScreen();
   });
 
   // ===================== ゲーム本体 =====================
