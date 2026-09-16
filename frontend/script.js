@@ -1,6 +1,6 @@
 (function(){
   // ===================== 設定 =====================
-  const API_BASE_URL = 'https://candyblast-server.onrender.com';
+const API_BASE_URL = 'https://pinkyburst.onrender.com';
 
   // ===================== 永続化ストレージ(localStorageベース) =====================
   // このアプリはRender上の通常のWebページとして動作するため、
