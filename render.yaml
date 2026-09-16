@@ -25,7 +25,7 @@ services:
 
   # ===== フロントエンド (静的サイト) =====
   - type: web
-    name: pinkyburst-frontend
+    name: candyblast-py
     runtime: static
     rootDir: frontend
     buildCommand: ""
