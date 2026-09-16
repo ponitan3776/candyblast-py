@@ -1,7 +1,7 @@
 services:
   # ===== バックエンド (Flask API) =====
   - type: web
-    name: candyblast-server
+    name: pinkyburst
     runtime: python
     plan: free
     rootDir: backend
@@ -25,7 +25,7 @@ services:
 
   # ===== フロントエンド (静的サイト) =====
   - type: web
-    name: candyblast-frontend
+    name: pinkyburst-frontend
     runtime: static
     rootDir: frontend
     buildCommand: ""
