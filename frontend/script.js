@@ -4264,10 +4264,11 @@ document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
 // ===================== 🎮 別のゲーム =====================
 
 // ===================== 🎮 別のゲーム =====================
-  const OTHER_GAMES = [
-    { emoji:'⚫', name:'オセロ', desc:'白と黒の石をひっくり返して陣取り！', url:'' },
-    { emoji:'⚪', name:'五目並べ', desc:'縦・横・斜めに5つ並べたら勝ち！', url:'' },
-    { emoji:'❌', name:'まるばつゲーム', desc:'3×3のマスで○×を並べる定番ゲーム', url:'' },
+
+const OTHER_GAMES = [
+    { emoji:'⚫', name:'オセロ', desc:'白と黒の石をひっくり返して陣取り！', url:'https://black-white-jycg.onrender.com' },
+    { emoji:'⚪', name:'五目並べ', desc:'縦・横・斜めに5つ並べたら勝ち！', url:'https://five-eye-line-up.onrender.com' },
+    { emoji:'❌', name:'まるばつゲーム', desc:'3×3のマスで○×を並べる定番ゲーム', url:'https://tic-tac-toe-1ixl.onrender.com' },
   ];
 
   function renderOtherGamesModal(){
