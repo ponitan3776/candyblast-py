@@ -2235,23 +2235,30 @@ const titleEl = document.querySelector('.title');
     btn.title = (bgmEnabled && bgmCurrentFile) ? 'BGM: 再生中' : 'BGM: 停止中';
   }
 
-  function playBgmTrack(file){
+function playBgmTrack(file){
     stopBgm();
     if(!file) return;
     bgmCurrentFile = file;
-    bgmAudio = new Audio('bgm/' + file);
-    bgmAudio.volume = bgmVolume;
-    bgmAudio.loop = true;
-    bgmAudio.addEventListener('error', ()=>{
+    // この再生インスタンスをローカル変数で持っておくことで、
+    // 途中で別のBGMに切り替わったときに古いインスタンスの
+    // コールバックが bgmAudio を誤ってnullに上書きするのを防ぐ
+    const thisAudio = new Audio('bgm/' + file);
+    bgmAudio = thisAudio;
+    thisAudio.volume = bgmVolume;
+    thisAudio.loop = true;
+    thisAudio.addEventListener('error', ()=>{
       console.warn('BGM読み込み失敗:', file);
-      bgmAudio = null;
+      // まだ自分がカレントのときだけ参照を消す
+      if(bgmAudio === thisAudio) bgmAudio = null;
       updateMusicButton();
     });
-    bgmAudio.play().then(()=>{
+    thisAudio.play().then(()=>{
       bgmStarted = true;
       updateMusicButton();
     }).catch(()=>{
-      bgmAudio = null;
+      // ★重要★ この時点で別のBGMに切り替わっていたら、
+      // 新しいBGMの参照を消してはいけない
+      if(bgmAudio === thisAudio) bgmAudio = null;
       updateMusicButton();
     });
     saveBgmSettings();
