@@ -1,6 +1,10 @@
 (function(){
   // ===================== 設定 =====================
   const API_BASE_URL = 'https://candyblast-server.onrender.com';
+  // ===================== 🎵 BGM設定 =====================
+  const BGM_TRACKS = [
+    'bgm/moonlight.mp3',
+  ];
 
   // ===================== 永続化ストレージ(localStorageベース) =====================
   // このアプリはRender上の通常のWebページとして動作するため、
