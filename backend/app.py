@@ -197,9 +197,10 @@ def init_db():
         ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active TIMESTAMP;
         ALTER TABLE users ALTER COLUMN coins TYPE BIGINT;
         ALTER TABLE users ALTER COLUMN best_score TYPE BIGINT;
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS gacha_state JSONB DEFAULT '{"totalPulls":0,"pityCounter":0}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gacha_state JSONB DEFAULT '{"totalPulls":0,"pityCounter":0}';
         ALTER TABLE users ADD COLUMN IF NOT EXISTS battlepass_xp INTEGER DEFAULT 0;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS battlepass_claimed JSONB DEFAULT '[]';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_forced_scores JSONB DEFAULT '{}';
     """)
     print('✅ users テーブル準備完了')
 
@@ -467,10 +468,24 @@ def sync_post():
 
         # 以前は「size===8のときだけ保存」という条件があり、8×8以外の盤面サイズで遊んだ
         # soft/baked/hardモードのスコアがサーバーに一切保存されないバグがあった。
+
+# フロントから「これは実際にプレイした結果だよ」という印（fromPlay）が来る。
+        # 管理者コマンドで入れた仮のスコアは、この印が来たときだけ上書きを許可する。
+        from_play = bool(body.get('fromPlay'))
         if mode and best_score is not None:
-            rows = db_query('SELECT best_scores, best_score FROM users WHERE id = %s', [user_id])
+            rows = db_query('SELECT best_scores, best_score, admin_forced_scores FROM users WHERE id = %s', [user_id])
             best_scores = (rows[0]['best_scores'] if rows else None) or {}
-            if not best_scores.get(mode) or best_score > best_scores[mode]:
+            forced = (rows[0].get('admin_forced_scores') if rows else None) or {}
+            if from_play and forced.get(mode):
+                # 管理者が /setscore で入れた値は「1回だけ有効」。
+                # 実際のプレイ結果が届いたら、それを正として上書きし、フタを外す。
+                best_scores[mode] = best_score
+                forced.pop(mode, None)
+                update_fields.append('best_scores = %s')
+                values.append(json.dumps(best_scores))
+                update_fields.append('admin_forced_scores = %s')
+                values.append(json.dumps(forced))
+            elif not best_scores.get(mode) or best_score > best_scores[mode]:
                 best_scores[mode] = best_score
                 update_fields.append('best_scores = %s')
                 values.append(json.dumps(best_scores))
@@ -1344,7 +1359,7 @@ def admin_command():
             db_execute('UPDATE users SET coins = %s WHERE id = %s', [new_total, target_id])
             result = f'✅ {target_id} のコインに {amount} を加算しました（合計: {new_total}）。'
 
-        elif cmd == '/setscore':
+elif cmd == '/setscore':
             if len(args) < 3:
                 raise ValueError('使用法: /setscore <ユーザーID> <mode> <score>')
             target_id, mode = args[0], args[1]
@@ -1354,17 +1369,22 @@ def admin_command():
                 raise ValueError(f"モードは {', '.join(valid_modes)} のいずれかです")
             if score is None or score < 0:
                 raise ValueError('正しいスコアを指定してください')
-            rows = db_query('SELECT best_scores FROM users WHERE id = %s', [target_id])
+            rows = db_query('SELECT best_scores, admin_forced_scores FROM users WHERE id = %s', [target_id])
             if not rows:
                 raise ValueError(f'ユーザー {target_id} は見つかりません')
             best_scores = rows[0].get('best_scores') or {}
             best_scores[mode] = score
+            # 「管理者が入れた仮の値」に印を付ける。
+            # 次にそのモードを実際にプレイしたら、この値は消えて本物の結果で上書きされる。
+            forced = rows[0].get('admin_forced_scores') or {}
+            forced[mode] = True
             regular_modes = ['soft', 'baked', 'hard', 'extreme']
             regular_scores = [best_scores[m] for m in regular_modes if isinstance(best_scores.get(m), (int, float))]
             max_score = max(regular_scores) if regular_scores else 0
-            db_execute('UPDATE users SET best_scores = %s, best_score = %s WHERE id = %s',
-                       [json.dumps(best_scores), max_score, target_id])
-            result = f'✅ {target_id} の {mode}モードのベストスコアを {score} に設定しました。'
+            db_execute('UPDATE users SET best_scores = %s, best_score = %s, admin_forced_scores = %s WHERE id = %s',
+                       [json.dumps(best_scores), max_score, json.dumps(forced), target_id])
+            result = (f'✅ {target_id} の {mode}モードのベストスコアを {score} に設定しました。\n'
+                      f'※ これは「1回だけ有効」な仮の値です。次に {mode} をプレイすると、その結果で上書きされます。')
 
         elif cmd == '/safety':
             if len(args) == 0:
