@@ -1926,8 +1926,8 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     const skin = SKINS.find(s=>s.id===id) || SKINS[0];
     equippedSkin = skin.id;
     Object.entries(skin.vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
-    const titleEl = document.querySelector('.title');
-    if(titleEl) titleEl.style.background = skin.titleGrad;
+const titleEl = document.querySelector('.title');
+    if(titleEl) titleEl.style.backgroundImage = skin.titleGrad;  // background → backgroundImage
     COLORS.length = 0;
     buildPatternedColors(skin.colors, skin.pattern).forEach(c=>COLORS.push(c));
     if(cellEls.length){
