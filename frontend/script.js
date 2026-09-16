@@ -1146,29 +1146,10 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     return pickAdaptiveShape(false, shapes);
   }
 
-  function ensurePlayable(){
-    if(currentMode==='hard' || currentMode==='extreme') return;
-    if(currentMode==='soft'){
-      tray.forEach((p,i)=>{
-        if(p.used || anyValidPlacement(p.shape)) return;
-        let bestShape = null, bestCount = -1;
-        SHAPES.forEach(shape=>{
-          const c = countValidPlacements(shape);
-          if(c > bestCount){ bestCount = c; bestShape = shape; }
-        });
-        if(bestShape && bestCount > 0) tray[i] = randomShapeColor(bestShape);
-      });
-      return;
-    }
-    const anyFits = tray.some(p => !p.used && anyValidPlacement(p.shape));
-    if(anyFits) return;
-    let bestShape = null, bestCount = -1;
-    SHAPES.forEach(shape=>{
-      const c = countValidPlacements(shape);
-      if(c > bestCount){ bestCount = c; bestShape = shape; }
-    });
-    if(bestShape && bestCount > 0) tray[0] = randomShapeColor(bestShape);
-  }
+function ensurePlayable(){
+    // 全モードで「置けなくなったらゲームオーバー」に統一
+    return;
+}
 
   function fillTray(){
     let availableShapes = SHAPES;
