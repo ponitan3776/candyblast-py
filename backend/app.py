@@ -1359,7 +1359,7 @@ def admin_command():
             db_execute('UPDATE users SET coins = %s WHERE id = %s', [new_total, target_id])
             result = f'✅ {target_id} のコインに {amount} を加算しました（合計: {new_total}）。'
 
-elif cmd == '/setscore':
+        elif cmd == '/setscore':
             if len(args) < 3:
                 raise ValueError('使用法: /setscore <ユーザーID> <mode> <score>')
             target_id, mode = args[0], args[1]
