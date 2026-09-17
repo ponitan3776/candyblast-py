@@ -290,10 +290,13 @@ def jst_date_key(d):
 
 
 # ===================== ガチャ・バトルパスの定数 =====================
+
 GACHA_SKIN_IDS = [
     'gacha_cosmicdragon', 'gacha_celestialphoenix', 'gacha_voidempress',
     'gacha_abyssleviathan', 'gacha_thunderlord', 'gacha_celestialblossom',
+    'gacha_eternalclockwork', 'gacha_prismaticqueen',
 ]
+
 GACHA_SKIN_ID_SET = set(GACHA_SKIN_IDS)
 GACHA_COST = 300
 GACHA_RATE_PER_SKIN = 0.02
