@@ -2275,7 +2275,6 @@ const titleEl = document.querySelector('.title');
         renderSettingsModal('bg');
       });
     } else {
-      } else {
       modalContent.querySelectorAll('.mode-card[data-mode]').forEach(card=>{
         card.addEventListener('click', ()=>{
           pendingMode = card.dataset.mode;
