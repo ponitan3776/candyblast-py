@@ -243,14 +243,47 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
   }
 
   const PATTERN_LAYERS = {
-    stripe: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.32) 0 3px, transparent 3px 9px)',
-    dot: 'radial-gradient(circle at 3px 3px, rgba(255,255,255,0.55) 1.6px, transparent 1.8px) 0 0/9px 9px',
-    grid: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.26) 0 1.4px, transparent 1.4px 8px), repeating-linear-gradient(90deg, rgba(255,255,255,0.26) 0 1.4px, transparent 1.4px 8px)',
-    wave: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.28) 0 2px, transparent 2px 10px)',
-    zigzag: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.3) 0 3px, transparent 3px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.3) 0 3px, transparent 3px 6px)',
-    diamond: 'repeating-linear-gradient(60deg, rgba(255,255,255,0.24) 0 2px, transparent 2px 9px), repeating-linear-gradient(-60deg, rgba(255,255,255,0.24) 0 2px, transparent 2px 9px)'
-  };
-  const PATTERN_LABELS = { stripe:'ストライプ', dot:'ドット', grid:'グリッド', wave:'ウェーブ', zigzag:'ジグザグ', diamond:'ダイヤ柄' };
+  stripe: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.32) 0 3px, transparent 3px 9px)',
+  dot: 'radial-gradient(circle at 3px 3px, rgba(255,255,255,0.55) 1.6px, transparent 1.8px) 0 0/9px 9px',
+  grid: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.26) 0 1.4px, transparent 1.4px 8px), repeating-linear-gradient(90deg, rgba(255,255,255,0.26) 0 1.4px, transparent 1.4px 8px)',
+  wave: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.28) 0 2px, transparent 2px 10px)',
+  zigzag: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.3) 0 3px, transparent 3px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.3) 0 3px, transparent 3px 6px)',
+  diamond: 'repeating-linear-gradient(60deg, rgba(255,255,255,0.24) 0 2px, transparent 2px 9px), repeating-linear-gradient(-60deg, rgba(255,255,255,0.24) 0 2px, transparent 2px 9px)',
+
+  // ===== 🌟 新柄パターン =====
+  // チェッカー: conic-gradientの4象限で市松模様
+  checker: 'conic-gradient(rgba(255,255,255,0.32) 90deg, transparent 90deg 180deg, rgba(255,255,255,0.32) 180deg 270deg, transparent 270deg) 0 0/12px 12px',
+  // キラキラ: 大小2つの点を互い違いに配置
+  sparkle: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.95) 0.9px, transparent 1.6px) 0 0/14px 14px, radial-gradient(circle at 50% 50%, rgba(255,255,255,0.55) 0.6px, transparent 1.3px) 7px 7px/14px 14px',
+  // 迷彩: 不規則な楕円ブロブを4つ重ねる
+  camo: 'radial-gradient(ellipse 7px 5px at 20% 30%, rgba(255,255,255,0.22) 50%, transparent 51%), radial-gradient(ellipse 5px 4px at 70% 65%, rgba(0,0,0,0.18) 50%, transparent 51%), radial-gradient(ellipse 4px 5px at 40% 80%, rgba(255,255,255,0.16) 50%, transparent 51%), radial-gradient(ellipse 5px 3px at 85% 20%, rgba(0,0,0,0.14) 50%, transparent 51%)',
+  // 大理石: 斜めの走査線を多重化
+  marble: 'repeating-linear-gradient(115deg, rgba(255,255,255,0.24) 0 1px, transparent 1px 4px, rgba(0,0,0,0.12) 4px 5px, transparent 5px 11px)',
+  // 雨: 角度の違う細い縦線を2層重ねる
+  rain: 'repeating-linear-gradient(95deg, rgba(255,255,255,0.38) 0 1px, transparent 1px 7px), repeating-linear-gradient(85deg, rgba(255,255,255,0.2) 0 1px, transparent 1px 11px)',
+  // レンガ: 縦横の目地を入れる
+  brick: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.24) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(0,0,0,0.24) 0 1px, transparent 1px 14px)',
+  // 泡: 大小の円を3つ散らす
+  bubble: 'radial-gradient(circle at 25% 30%, rgba(255,255,255,0.55) 1.2px, transparent 2.2px), radial-gradient(circle at 75% 70%, rgba(255,255,255,0.4) 1px, transparent 2px), radial-gradient(circle at 55% 15%, rgba(255,255,255,0.3) 0.8px, transparent 1.8px)',
+  // タータン: 縦横の太線+斜めの細線でチェック柄
+  tartan: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.22) 0 3px, transparent 3px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 3px, transparent 3px 12px), repeating-linear-gradient(45deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 6px)',
+  // ハーフトーン: 網点印刷風のドット
+  halftone: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.42) 1.6px, transparent 2.1px) 0 0/8px 8px',
+  // ハニカム: 60度ずつの円錐グラデーションで蜂の巣風
+  honeycomb: 'conic-gradient(from 30deg, transparent 0 60deg, rgba(255,255,255,0.26) 60deg 120deg, transparent 120deg 180deg, rgba(255,255,255,0.26) 180deg 240deg, transparent 240deg 300deg, rgba(255,255,255,0.26) 300deg 360deg) 0 0/10px 8px',
+  // 竹: 節のような横線+細い縦線
+  bamboo: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 14px), repeating-linear-gradient(90deg, rgba(255,255,255,0.2) 0 2px, transparent 2px 16px)',
+  // 鱗: 45度の斜め線+横線で魚の鱗風
+  scale: 'repeating-linear-gradient(90deg, transparent 0 4px, rgba(255,255,255,0.2) 4px 6px, transparent 6px 12px), repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0 1px, transparent 1px 8px)',
+  // 十字: プラス記号を敷き詰める
+  cross: 'linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)) 50% 50%/2px 10px no-repeat, linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)) 50% 50%/10px 2px no-repeat, radial-gradient(circle at 50% 50%, transparent 4px, transparent 5px) 0 0/12px 12px'
+};
+const PATTERN_LABELS = {
+  stripe:'ストライプ', dot:'ドット', grid:'グリッド', wave:'ウェーブ', zigzag:'ジグザグ', diamond:'ダイヤ柄',
+  checker:'チェッカー', sparkle:'キラキラ', camo:'迷彩', marble:'大理石', rain:'雨', brick:'レンガ',
+  bubble:'泡', tartan:'タータン', halftone:'ハーフトーン', honeycomb:'ハニカム', bamboo:'竹',
+  scale:'鱗', cross:'十字'
+};
 
   const SKINS = [
     { id:'default', name:'ミッドナイトキャンディ', price:0, desc:'定番のパープル×ゴールドの夜空テーマ。',
@@ -569,24 +602,238 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
         {bg:'linear-gradient(135deg,#FFE5F0 0%,#E0A8FF 50%,#FFD9A8 100%)'}
       ] },
   ];
+
+{ id:'gacha_eternalclockwork', name:'⚙️ エターナルクロックワーク', price:0, gacha:true, gachaEffect:true,
+      desc:'時を統べる歯車の神。その機構は永遠の刻を刻み続ける、ガチャ限定の至高。',
+      vars:{ '--bg-deep':'#0a0806','--bg-deep2':'#16120c','--panel':'#221c14','--panel-light':'#342b1f',
+        '--gold':'#FFD060','--coral':'#C8803D','--mint':'#E8C060','--blue':'#A88850','--purple':'#C0A060',
+        '--pink':'#E8B860','--lime':'#D8C060','--text':'#FFF0D0','--text-dim':'#B89860' },
+      titleGrad:'linear-gradient(90deg,#FFD060,#C8803D,#8A6020)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE080 0%,#D8A040 40%,#8A6020 100%)'},
+        {bg:'linear-gradient(135deg,#E8C060 0%,#B08030 50%,#604820 100%)'},
+        {bg:'linear-gradient(135deg,#F0C870 0%,#C89040 50%,#8A6830 100%)'},
+        {bg:'linear-gradient(135deg,#D8A850 0%,#A07830 50%,#504020 100%)'},
+        {bg:'linear-gradient(135deg,#FFF0B0 0%,#FFD060 50%,#A87830 100%)'},
+        {bg:'linear-gradient(135deg,#C0A060 0%,#8A6830 50%,#4A3820 100%)'},
+        {bg:'linear-gradient(135deg,#FFE898 0%,#E8B050 50%,#B07830 100%)'}
+      ] },
+    { id:'gacha_prismaticqueen', name:'💎 プリズマティッククイーン', price:0, gacha:true, gachaEffect:true,
+      desc:'プリズムのように七色に輝く女王の宝冠。見る角度で姿を変える、ガチャ限定の至宝。',
+      vars:{ '--bg-deep':'#0a0518','--bg-deep2':'#160a28','--panel':'#221444','--panel-light':'#34205c',
+        '--gold':'#FFD0FF','--coral':'#FF60D0','--mint':'#A0FFFF','--blue':'#80A0FF','--purple':'#D080FF',
+        '--pink':'#FF80E0','--lime':'#D0FFA0','--text':'#FFF8FF','--text-dim':'#B8A0D8' },
+      titleGrad:'linear-gradient(90deg,#FFD0FF,#A0FFFF,#D080FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFD0FF 0%,#FF80D0 50%,#A060FF 100%)'},
+        {bg:'linear-gradient(135deg,#A0FFFF 0%,#80C8FF 50%,#D080FF 100%)'},
+        {bg:'linear-gradient(135deg,#D0FFA0 0%,#A0F0D0 50%,#80C8FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFB0E8 0%,#D080FF 50%,#8090FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFE0A0 0%,#FFA8C0 50%,#FF80E0 100%)'},
+        {bg:'linear-gradient(135deg,#B0FFD8 0%,#A0E8F0 50%,#D080FF 100%)'},
+        {bg:'linear-gradient(135deg,#F0B0FF 0%,#D090FF 50%,#A0A8FF 100%)'}
+      ] }
+
+// ===================== 🆕 追加スキン（テーマ拡張15種） =====================
+    { id:'stardust', name:'スターダスト', price:900, desc:'夜空に瞬く無数の星屑を集めたような、きらめくダークブルー。',
+      vars:{ '--bg-deep':'#07061a','--bg-deep2':'#0e0c30','--panel':'#181350','--panel-light':'#241d6e',
+        '--gold':'#FFE066','--coral':'#FF8FA3','--mint':'#8FE3FF','--blue':'#6E8CFF','--purple':'#B18CFF',
+        '--pink':'#FFA8D9','--lime':'#E1F065','--text':'#F5F3FF','--text-dim':'#A8A0D9' },
+      titleGrad:'linear-gradient(90deg,#FFE066,#6E8CFF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE066,#FFC93D)'},{bg:'linear-gradient(135deg,#8FE3FF,#4DB6FF)'},
+        {bg:'linear-gradient(135deg,#B18CFF,#7C5CFF)'},{bg:'linear-gradient(135deg,#FFA8D9,#FF6FB5)'},
+        {bg:'linear-gradient(135deg,#8FFFCF,#3DDC97)'},{bg:'linear-gradient(135deg,#FFB88F,#FF7A3D)'},
+        {bg:'linear-gradient(135deg,#E1F065,#A8D93D)'}
+      ] },
+    { id:'moonlight', name:'ムーンライトソナタ', price:1100, desc:'静かな夜に響く月光の調べ。銀色に煌めく幻想的なパレット。',
+      vars:{ '--bg-deep':'#0a0e22','--bg-deep2':'#141a38','--panel':'#1e2652','--panel-light':'#2b3570',
+        '--gold':'#E0E8FF','--coral':'#9BB0FF','--mint':'#C8D8FF','--blue':'#7A92F0','--purple':'#A8B8FF',
+        '--pink':'#D8C8FF','--lime':'#B8D8FF','--text':'#F0F4FF','--text-dim':'#8A96C8' },
+      titleGrad:'linear-gradient(90deg,#E0E8FF,#7A92F0)',
+      colors:[
+        {bg:'linear-gradient(135deg,#F0F4FF,#C8D8FF)'},{bg:'linear-gradient(135deg,#B8C8FF,#7A92F0)'},
+        {bg:'linear-gradient(135deg,#D8C8FF,#A8A0E8)'},{bg:'linear-gradient(135deg,#A8E0FF,#6FB0E8)'},
+        {bg:'linear-gradient(135deg,#E8E0FF,#A8B8FF)'},{bg:'linear-gradient(135deg,#C8F0FF,#7CC8E8)'},
+        {bg:'linear-gradient(135deg,#D0D8FF,#8A96C8)'}
+      ] },
+    { id:'desert', name:'デザートミラージュ', price:1000, desc:'蜃気楼の向こうに広がる灼熱の砂漠と夕陽のオレンジ。',
+      vars:{ '--bg-deep':'#2a1a0c','--bg-deep2':'#3e2712','--panel':'#55341a','--panel-light':'#704625',
+        '--gold':'#FFB84D','--coral':'#FF7043','--mint':'#FFD9A0','--blue':'#FFAB6B','--purple':'#E88A4A',
+        '--pink':'#FF9070','--lime':'#F0C060','--text':'#FFF4E0','--text-dim':'#C9A67F' },
+      titleGrad:'linear-gradient(90deg,#FFB84D,#FF7043)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFC97A,#F09A3D)'},{bg:'linear-gradient(135deg,#FF9070,#E85A3D)'},
+        {bg:'linear-gradient(135deg,#FFE0A0,#E8B860)'},{bg:'linear-gradient(135deg,#FFAB6B,#D98040)'},
+        {bg:'linear-gradient(135deg,#E8A870,#B87040)'},{bg:'linear-gradient(135deg,#FFD060,#E8A030)'},
+        {bg:'linear-gradient(135deg,#C08A50,#905A30)'}
+      ] },
+    { id:'forest', name:'フォレストブリーズ', price:950, desc:'木漏れ日が差し込む深い森の緑と、土の温もりを感じるナチュラルカラー。',
+      vars:{ '--bg-deep':'#0c1a0c','--bg-deep2':'#152a15','--panel':'#1e3d1e','--panel-light':'#2a522a',
+        '--gold':'#A8E060','--coral':'#D89050','--mint':'#6FD86F','--blue':'#7FD8A0','--purple':'#A8C870',
+        '--pink':'#E0C888','--lime':'#C8E870','--text':'#F0FFE8','--text-dim':'#8AB88A' },
+      titleGrad:'linear-gradient(90deg,#A8E060,#6FD86F)',
+      colors:[
+        {bg:'linear-gradient(135deg,#B8E88A,#7FC850)'},{bg:'linear-gradient(135deg,#70D870,#40A840)'},
+        {bg:'linear-gradient(135deg,#A0D8A0,#60A860)'},{bg:'linear-gradient(135deg,#D8C080,#A89040)'},
+        {bg:'linear-gradient(135deg,#88D8A8,#50A870)'},{bg:'linear-gradient(135deg,#C8E888,#90C850)'},
+        {bg:'linear-gradient(135deg,#A8B870,#708040)'}
+      ] },
+    { id:'crystalcave', name:'クリスタルケイブ', price:1400, desc:'地底深くに輝く紫水晶と蒼い結晶が織りなす、神秘の洞窟。',
+      vars:{ '--bg-deep':'#0a0520','--bg-deep2':'#160a36','--panel':'#221450','--panel-light':'#321e6e',
+        '--gold':'#B0E0FF','--coral':'#E070FF','--mint':'#80E0FF','--blue':'#6FB8FF','--purple':'#A870FF',
+        '--pink':'#D880FF','--lime':'#A0E8FF','--text':'#F5F0FF','--text-dim':'#9C8AC8' },
+      titleGrad:'linear-gradient(90deg,#B0E0FF,#A870FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#C8E8FF,#80B8E8)'},{bg:'linear-gradient(135deg,#D8A8FF,#A870E8)'},
+        {bg:'linear-gradient(135deg,#A0D8FF,#5090E0)'},{bg:'linear-gradient(135deg,#E0B8FF,#B080E8)'},
+        {bg:'linear-gradient(135deg,#90D8E8,#4090B8)'},{bg:'linear-gradient(135deg,#C8B0FF,#9070E0)'},
+        {bg:'linear-gradient(135deg,#B0E8D8,#60B8A8)'}
+      ] },
+    { id:'cybercity', name:'サイバーシティ2099', price:1700, desc:'ネオンが瞬く未来都市の夜景。電脳空間のサイバーパンク配色。',
+      vars:{ '--bg-deep':'#05001a','--bg-deep2':'#0a0530','--panel':'#150a45','--panel-light':'#20125c',
+        '--gold':'#00F0FF','--coral':'#FF00A8','--mint':'#00FFA8','--blue':'#00A8FF','--purple':'#A800FF',
+        '--pink':'#FF00A8','--lime':'#A8FF00','--text':'#F0F8FF','--text-dim':'#7090B8' },
+      titleGrad:'linear-gradient(90deg,#00F0FF,#FF00A8)',
+      colors:[
+        {bg:'linear-gradient(135deg,#00F0FF,#0088A8)'},{bg:'linear-gradient(135deg,#FF00A8,#A80060)'},
+        {bg:'linear-gradient(135deg,#00FFA8,#00A870)'},{bg:'linear-gradient(135deg,#A800FF,#6000A8)'},
+        {bg:'linear-gradient(135deg,#A8FF00,#70A800)'},{bg:'linear-gradient(135deg,#FF8000,#A85000)'},
+        {bg:'linear-gradient(135deg,#00A8FF,#0068A8)'}
+      ] },
+    { id:'fireworks', name:'花火大会', price:1300, desc:'夏の夜空を彩る大輪の花火。暗闇に弾ける鮮やかな色彩。',
+      vars:{ '--bg-deep':'#0a0a14','--bg-deep2':'#15152a','--panel':'#1f1f40','--panel-light':'#2e2e5c',
+        '--gold':'#FFE060','--coral':'#FF5080','--mint':'#60FFC0','--blue':'#60A8FF','--purple':'#C060FF',
+        '--pink':'#FF60C0','--lime':'#C0FF60','--text':'#FFFFFF','--text-dim':'#A8A8C8' },
+      titleGrad:'linear-gradient(90deg,#FFE060,#FF5080)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE060,#FFA020)'},{bg:'linear-gradient(135deg,#FF5080,#D02060)'},
+        {bg:'linear-gradient(135deg,#60FFC0,#20B080)'},{bg:'linear-gradient(135deg,#60A8FF,#2060C0)'},
+        {bg:'linear-gradient(135deg,#C060FF,#8030C0)'},{bg:'linear-gradient(135deg,#FF60C0,#C02080)'},
+        {bg:'linear-gradient(135deg,#C0FF60,#80C020)'}
+      ] },
+    { id:'pirate', name:'パイレーツコーブ', price:1200, desc:'海賊の隠れ家に眠る黄金と、深い海の青。冒険心をくすぐる配色。',
+      vars:{ '--bg-deep':'#0a1418','--bg-deep2':'#141f28','--panel':'#1e2e3a','--panel-light':'#2c4250',
+        '--gold':'#E8C060','--coral':'#C8804A','--mint':'#60C8B8','--blue':'#4A90B8','--purple':'#8A7050',
+        '--pink':'#C89070','--lime':'#A8C060','--text':'#F0EDE0','--text-dim':'#9A9080' },
+      titleGrad:'linear-gradient(90deg,#E8C060,#4A90B8)',
+      colors:[
+        {bg:'linear-gradient(135deg,#E8C060,#B89030)'},{bg:'linear-gradient(135deg,#60C8B8,#30A898)'},
+        {bg:'linear-gradient(135deg,#4A90B8,#206890)'},{bg:'linear-gradient(135deg,#C8804A,#905020)'},
+        {bg:'linear-gradient(135deg,#8A7050,#5A4830)'},{bg:'linear-gradient(135deg,#A8C060,#709030)'},
+        {bg:'linear-gradient(135deg,#C89070,#906040)'}
+      ] },
+    { id:'ninja', name:'シノビシャドウ', price:1350, desc:'闇に溶け込む忍者の黒装束と、緋色の帯。静寂に満ちた和のダークテーマ。',
+      vars:{ '--bg-deep':'#0a0606','--bg-deep2':'#150a0a','--panel':'#201010','--panel-light':'#301818',
+        '--gold':'#C8A060','--coral':'#D83030','--mint':'#70A890','--blue':'#506890','--purple':'#705070',
+        '--pink':'#C06080','--lime':'#A8A060','--text':'#F0E8E0','--text-dim':'#907878' },
+      titleGrad:'linear-gradient(90deg,#D83030,#C8A060)',
+      colors:[
+        {bg:'linear-gradient(135deg,#D83030,#901818)'},{bg:'linear-gradient(135deg,#2a2a2a,#0a0a0a)'},
+        {bg:'linear-gradient(135deg,#506890,#283850)'},{bg:'linear-gradient(135deg,#C8A060,#8A6030)'},
+        {bg:'linear-gradient(135deg,#705070,#403040)'},{bg:'linear-gradient(135deg,#70A890,#387058)'},
+        {bg:'linear-gradient(135deg,#A8A060,#707030)'}
+      ] },
+    { id:'hotspring', name:'湯けむり温泉', price:1000, desc:'湯気の立ち上る露天風呂と、夕暮れの空。心安らぐ和みの配色。',
+      vars:{ '--bg-deep':'#2a1f18','--bg-deep2':'#3d2c22','--panel':'#503a2c','--panel-light':'#6a503c',
+        '--gold':'#F0C890','--coral':'#E89070','--mint':'#D8C8B0','--blue':'#A8A8B8','--purple':'#C0A0A0',
+        '--pink':'#E8A8A0','--lime':'#D0C080','--text':'#FFF4E8','--text-dim':'#C0A890' },
+      titleGrad:'linear-gradient(90deg,#F0C890,#E89070)',
+      colors:[
+        {bg:'linear-gradient(135deg,#F0C890,#C89860)'},{bg:'linear-gradient(135deg,#E89070,#B86040)'},
+        {bg:'linear-gradient(135deg,#A8A8B8,#788898)'},{bg:'linear-gradient(135deg,#C0A0A0,#907080)'},
+        {bg:'linear-gradient(135deg,#D8C8B0,#A89880)'},{bg:'linear-gradient(135deg,#E8A8A0,#B87068)'},
+        {bg:'linear-gradient(135deg,#D0C080,#908840)'}
+      ] },
+    { id:'retrogame', name:'レトロゲームボーイ', price:1100, desc:'8ビットの懐かしさ。モノクローム液晶のグリーン一色。',
+      vars:{ '--bg-deep':'#0a1408','--bg-deep2':'#14240c','--panel':'#1e3a10','--panel-light':'#2e5518',
+        '--gold':'#A8E060','--coral':'#70B830','--mint':'#B8E880','--blue':'#88C850','--purple':'#90D840',
+        '--pink':'#A0E058','--lime':'#C8F088','--text':'#E8FFD8','--text-dim':'#88A870' },
+      titleGrad:'linear-gradient(90deg,#A8E060,#70B830)',
+      colors:[
+        {bg:'linear-gradient(135deg,#C8F088,#90C850)'},{bg:'linear-gradient(135deg,#A8E060,#70B830)'},
+        {bg:'linear-gradient(135deg,#B8E880,#80C048)'},{bg:'linear-gradient(135deg,#88C850,#509020)'},
+        {bg:'linear-gradient(135deg,#A0E058,#689830)'},{bg:'linear-gradient(135deg,#90D840,#588810)'},
+        {bg:'linear-gradient(135deg,#D8FFA0,#A8E060)'}
+      ] },
+    { id:'pasteldream', name:'パステルドリーム', price:1000, desc:'雲の上を歩くような、ふわふわで夢見心地のパステルカラー。',
+      vars:{ '--bg-deep':'#2a1e30','--bg-deep2':'#3d2c44','--panel':'#503a58','--panel-light':'#6a506e',
+        '--gold':'#FFD8E8','--coral':'#FFB0C8','--mint':'#C8E8FF','--blue':'#B0C8FF','--purple':'#D8B8F0',
+        '--pink':'#FFB8D8','--lime':'#E0F0C0','--text':'#FFF8FF','--text-dim':'#C0A8C8' },
+      titleGrad:'linear-gradient(90deg,#FFD8E8,#B0C8FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFD8E8,#FFA8C8)'},{bg:'linear-gradient(135deg,#C8E8FF,#90C0F0)'},
+        {bg:'linear-gradient(135deg,#D8B8F0,#B080E0)'},{bg:'linear-gradient(135deg,#C8F0E0,#90D0C0)'},
+        {bg:'linear-gradient(135deg,#FFE8C8,#FFC890)'},{bg:'linear-gradient(135deg,#E0F0C0,#B0D080)'},
+        {bg:'linear-gradient(135deg,#FFC8E0,#F090B8)'}
+      ] },
+    { id:'hologram', name:'ホログラムシフト', price:2000, desc:'光の角度で色が変わる、オーロラのような虹色の輝き。',
+      vars:{ '--bg-deep':'#0a0a18','--bg-deep2':'#14142c','--panel':'#202040','--panel-light':'#2e2e60',
+        '--gold':'#FFE0F0','--coral':'#FF80D0','--mint':'#A0F0FF','--blue':'#80B0FF','--purple':'#D080FF',
+        '--pink':'#FF90E0','--lime':'#D0FFA0','--text':'#F8F0FF','--text-dim':'#A8A0C8' },
+      titleGrad:'linear-gradient(90deg,#FFE0F0,#A0F0FF,#D080FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFE0F0 0%,#FFA8D0 50%,#D080FF 100%)'},
+        {bg:'linear-gradient(135deg,#A0F0FF 0%,#80C0FF 50%,#B080FF 100%)'},
+        {bg:'linear-gradient(135deg,#D0FFA0 0%,#A0E8C8 50%,#80D0FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFB0E8 0%,#D080FF 50%,#8090FF 100%)'},
+        {bg:'linear-gradient(135deg,#FFE080 0%,#FFA8A0 50%,#FF80D0 100%)'},
+        {bg:'linear-gradient(135deg,#A0FFD8 0%,#80E0F0 50%,#B080FF 100%)'},
+        {bg:'linear-gradient(135deg,#F0A8FF 0%,#C080F0 50%,#80A8FF 100%)'}
+      ] },
+    { id:'rainbowroad', name:'レインボーロード', price:2200, desc:'虹色に輝く夢の道。すべての色が主役のカラフルテーマ。',
+      vars:{ '--bg-deep':'#0a0a14','--bg-deep2':'#14142a','--panel':'#1f1f40','--panel-light':'#2e2e5c',
+        '--gold':'#FFD93D','--coral':'#FF4444','--mint':'#44FF88','--blue':'#4488FF','--purple':'#AA44FF',
+        '--pink':'#FF44AA','--lime':'#AAFF44','--text':'#FFFFFF','--text-dim':'#B8B8D8' },
+      titleGrad:'linear-gradient(90deg,#FF4444,#FFD93D,#44FF88,#4488FF,#AA44FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FF6B6B,#E83030)'},{bg:'linear-gradient(135deg,#FFD93D,#E8B020)'},
+        {bg:'linear-gradient(135deg,#6BFF9C,#20C860)'},{bg:'linear-gradient(135deg,#6BB8FF,#2078E8)'},
+        {bg:'linear-gradient(135deg,#C87BFF,#8030E8)'},{bg:'linear-gradient(135deg,#FF7BC8,#E830A0)'},
+        {bg:'linear-gradient(135deg,#C8FF6B,#88C820)'}
+      ] },
+    { id:'snowfield', name:'スノーフィールド', price:1050, desc:'一面に広がる純白の雪原と、澄み切った冬空の青。',
+      vars:{ '--bg-deep':'#1a2030','--bg-deep2':'#253044','--panel':'#324258','--panel-light':'#485a74',
+        '--gold':'#E0F0FF','--coral':'#A8D0FF','--mint':'#FFFFFF','--blue':'#80B8E8','--purple':'#B8D0F0',
+        '--pink':'#E0E8FF','--lime':'#D0E8FF','--text':'#FFFFFF','--text-dim':'#A8B8D0' },
+      titleGrad:'linear-gradient(90deg,#E0F0FF,#80B8E8)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FFFFFF,#D0E8FF)'},{bg:'linear-gradient(135deg,#B8D8F8,#80B0E8)'},
+        {bg:'linear-gradient(135deg,#E0F0FF,#A8C8F0)'},{bg:'linear-gradient(135deg,#C8E0FF,#8FB8E8)'},
+        {bg:'linear-gradient(135deg,#F0F8FF,#C0D8F0)'},{bg:'linear-gradient(135deg,#D8E8FF,#A0B8D8)'},
+        {bg:'linear-gradient(135deg,#E8F4FF,#B0C8E8)'}
+      ] },
+
   SKINS.push(...GACHA_SKINS);
 
   // ===================== 模様入りスキンを自動生成（既存パレット×パターンの組み合わせ）=====================
   // 通常スキンより高価に設定し、ボードの各ブロックに柄（ストライプ・ドットなど）を重ねて描画する
   (function generatePatternedSkins(){
-    const plainSkins = SKINS.filter(s=>!s.gacha); // ガチャ限定スキンは柄違いバージョンを作らない(購入不可のまま維持)
+    const plainSkins = SKINS.filter(s=>!s.gacha);
     const patternKeys = Object.keys(PATTERN_LAYERS);
+    const N = patternKeys.length;
+
     plainSkins.forEach((base, i)=>{
-      const patternKey = patternKeys[i % patternKeys.length];
-      SKINS.push({
-        id: `${base.id}-${patternKey}`,
-        name: `${base.name}（${PATTERN_LABELS[patternKey]}柄）`,
-        price: Math.round(base.price * 2.3 + 600),
-        desc: `${base.desc} ブロックに${PATTERN_LABELS[patternKey]}模様をあしらった特別バージョン。`,
-        vars: base.vars,
-        titleGrad: base.titleGrad,
-        colors: base.colors,
-        pattern: patternKey
+      // 各スキンに2種の柄バリエーションを付与（プライマリ + セカンダリ）
+      const primaryIdx = i % N;
+      const secondaryIdx = (i * 3 + 7) % N;   // 別の柄が当たるよう黄金角風のずらし
+      const seen = new Set();
+
+      [primaryIdx, secondaryIdx].forEach((idx)=>{
+        const patternKey = patternKeys[idx];
+        if(seen.has(patternKey)) return;
+        seen.add(patternKey);
+
+        SKINS.push({
+          id: `${base.id}-${patternKey}`,
+          name: `${base.name}（${PATTERN_LABELS[patternKey]}柄）`,
+          price: Math.round(base.price * 2.3 + 600),
+          desc: `${base.desc} ブロックに${PATTERN_LABELS[patternKey]}模様をあしらった特別バージョン。`,
+          vars: base.vars,
+          titleGrad: base.titleGrad,
+          colors: base.colors,
+          pattern: patternKey
+        });
       });
     });
   })();
