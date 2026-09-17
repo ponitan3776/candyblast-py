@@ -601,7 +601,6 @@ const PATTERN_LABELS = {
         {bg:'linear-gradient(135deg,#E0A8FF 0%,#C87FE8 50%,#FFD9A8 100%)'},
         {bg:'linear-gradient(135deg,#FFE5F0 0%,#E0A8FF 50%,#FFD9A8 100%)'}
       ] },
-  ];
 
 { id:'gacha_eternalclockwork', name:'⚙️ エターナルクロックワーク', price:0, gacha:true, gachaEffect:true,
       desc:'時を統べる歯車の神。その機構は永遠の刻を刻み続ける、ガチャ限定の至高。',
@@ -633,8 +632,10 @@ const PATTERN_LABELS = {
         {bg:'linear-gradient(135deg,#B0FFD8 0%,#A0E8F0 50%,#D080FF 100%)'},
         {bg:'linear-gradient(135deg,#F0B0FF 0%,#D090FF 50%,#A0A8FF 100%)'}
       ] }
+  ];
 
-// ===================== 🆕 追加スキン（テーマ拡張15種） =====================
+  // ===================== 🆕 追加スキン（テーマ拡張15種） =====================
+  SKINS.push(
     { id:'stardust', name:'スターダスト', price:900, desc:'夜空に瞬く無数の星屑を集めたような、きらめくダークブルー。',
       vars:{ '--bg-deep':'#07061a','--bg-deep2':'#0e0c30','--panel':'#181350','--panel-light':'#241d6e',
         '--gold':'#FFE066','--coral':'#FF8FA3','--mint':'#8FE3FF','--blue':'#6E8CFF','--purple':'#B18CFF',
@@ -802,7 +803,8 @@ const PATTERN_LABELS = {
         {bg:'linear-gradient(135deg,#E0F0FF,#A8C8F0)'},{bg:'linear-gradient(135deg,#C8E0FF,#8FB8E8)'},
         {bg:'linear-gradient(135deg,#F0F8FF,#C0D8F0)'},{bg:'linear-gradient(135deg,#D8E8FF,#A0B8D8)'},
         {bg:'linear-gradient(135deg,#E8F4FF,#B0C8E8)'}
-      ] },
+      ] }
+  );
 
   SKINS.push(...GACHA_SKINS);
 
