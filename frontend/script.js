@@ -114,6 +114,56 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     return MODE_COIN_MULT[m] * sizeCoinMult(s);
   }
 
+// ===================== 🤖 テトリス AI難易度 =====================
+  const AI_DIFFICULTIES = {
+    easy: {
+      label: '😊 簡単',
+      desc: 'AIがミスを連発。のんびり遊べます。',
+      speed: 1500,       // 1手あたりの間隔(ms)
+      randomChance: 0.7, // ランダムで適当な手を選ぶ確率
+      weightScale: 0.3,  // 評価関数の重み倍率
+      noise: 50          // 評価に加えるランダムノイズ
+    },
+    normal: {
+      label: '🙂 普通',
+      desc: 'AIがたまにミスをします。',
+      speed: 900,
+      randomChance: 0.35,
+      weightScale: 0.6,
+      noise: 20
+    },
+    hard: {
+      label: '😤 難しい',
+      desc: 'AIはほぼミスをしません。',
+      speed: 550,
+      randomChance: 0.1,
+      weightScale: 0.9,
+      noise: 5
+    },
+    modern: {
+      label: '🔥 現代最強',
+      desc: '高速・完璧な判断。人間には厳しい。',
+      speed: 250,
+      randomChance: 0,
+      weightScale: 1.0,
+      noise: 0
+    },
+    history: {
+      label: '👑 史上最強',
+      desc: '1手先読みで最強。もう勝てません。',
+      speed: 80,
+      randomChance: 0,
+      weightScale: 1.0,
+      noise: 0,
+      lookahead: true   // 1手先読みを有効化
+    }
+  };
+
+  // テトリス関連のモード設定
+  let tetrisSubMode = 'solo';    // 'solo' | 'vs'
+  let aiDifficulty = 'normal';   // AI_DIFFICULTIES のキー
+  let tetrisVsMode = false;      // 実行時フラグ: VS AIモードかどうか
+
   // ===================== スキン =====================
   // ===================== 背景画像(お好みの写真を背景に設定) =====================
   const STORAGE_BG_IMAGE = 'candyblast-bg-image-v1';
@@ -789,7 +839,10 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
   }
 
   function updateModeBadge(){
-    if(currentMode==='tetris'){ modeBadgeEl.textContent = '🧱 テトリス'; return; }
+    if(currentMode==='tetris'){
+      modeBadgeEl.textContent = tetrisVsMode ? '⚔️ テトリス VS AI' : '🧱 テトリス ソロ';
+      return;
+    }
     if(currentMode==='timeattack'){ modeBadgeEl.textContent = '⏱ タイムアタック'; return; }
     const m = MODES[currentMode];
     if(m) modeBadgeEl.textContent = `${m.emoji} ${m.label} · ${SIZE}×${SIZE}`;
@@ -2030,16 +2083,29 @@ const titleEl = document.querySelector('.title');
       const res = await appStorage.get(STORAGE_SETTINGS, false);
       if(res && res.value){
         const parsed = JSON.parse(res.value);
-        // タイムアタックはセッション的なモードなので、リロード時は自動再開せず通常モードに戻す
         currentMode = (MODES[parsed.mode] || parsed.mode==='tetris') ? parsed.mode : 'baked';
         SIZE = (currentMode==='extreme') ? 8 : Math.min(18, Math.max(5, parsed.size||8));
+        // ★テトリスのサブモードとAI難易度を復元
+        if(parsed.tetrisSubMode === 'solo' || parsed.tetrisSubMode === 'vs'){
+          tetrisSubMode = parsed.tetrisSubMode;
+        }
+        if(parsed.aiDifficulty && AI_DIFFICULTIES[parsed.aiDifficulty]){
+          aiDifficulty = parsed.aiDifficulty;
+        }
         isFirstTime = false;
       }
     }catch(err){}
     return isFirstTime;
   }
   async function saveSettings(){
-    try{ await appStorage.set(STORAGE_SETTINGS, JSON.stringify({mode:currentMode, size:SIZE}), false); }catch(err){}
+    try{
+      await appStorage.set(STORAGE_SETTINGS, JSON.stringify({
+        mode: currentMode,
+        size: SIZE,
+        tetrisSubMode: tetrisSubMode,
+        aiDifficulty: aiDifficulty
+      }), false);
+    }catch(err){}
   }
 
   function renderModeTab(){
@@ -2066,9 +2132,37 @@ const titleEl = document.querySelector('.title');
       </div>`;
 
     if(pendingMode === 'tetris'){
+      // 🎮 遊び方を選択（ソロ or VS AI）
+      html += `<div class="sub" style="margin:12px 0 8px; font-weight:800; color:var(--gold);">🎮 遊び方を選択</div>`;
       html += `
-        <div class="sub" style="margin:8px 0;">テトリス。タッチ操作を完全修正。ズームすることがなくなりました。</div>
-        <button class="primary-btn" id="applyModeBtn">テトリスを始める</button>`;
+        <div class="mode-card ${tetrisSubMode==='solo'?'selected':''}" data-tetris-sub="solo">
+          <div class="mode-card-head"><span class="mode-emoji">🧱</span><span>ソロモード</span>
+            <span class="coin-tag">練習・記録更新</span></div>
+        </div>
+        <div class="mode-card ${tetrisSubMode==='vs'?'selected':''}" data-tetris-sub="vs">
+          <div class="mode-card-head"><span class="mode-emoji">⚔️</span><span>VS AI</span>
+            <span class="coin-tag">AIと勝負</span></div>
+        </div>
+      `;
+
+      // VS AIの時は難易度選択を表示
+      if(tetrisSubMode === 'vs'){
+        html += `<div class="sub" style="margin:14px 0 8px; font-weight:800; color:var(--gold);">🤖 AIの強さを選択</div>`;
+        Object.entries(AI_DIFFICULTIES).forEach(([key, diff]) => {
+          html += `
+            <div class="mode-card ${aiDifficulty===key?'selected':''}" data-ai-diff="${key}">
+              <div class="mode-card-head">
+                <span style="font-size:16px;">${diff.label}</span>
+              </div>
+              <div class="sub" style="margin-top:4px; font-size:11px;">${diff.desc}</div>
+            </div>`;
+        });
+      }
+
+      const startLabel = tetrisSubMode==='solo'
+        ? '🧱 ソロモードを始める'
+        : `⚔️ ${AI_DIFFICULTIES[aiDifficulty].label} と対戦`;
+      html += `<button class="primary-btn" id="applyModeBtn" style="margin-top:12px;">${startLabel}</button>`;
       return html;
     }
     if(pendingMode === 'timeattack'){
@@ -2181,10 +2275,25 @@ const titleEl = document.querySelector('.title');
         renderSettingsModal('bg');
       });
     } else {
-      modalContent.querySelectorAll('.mode-card').forEach(card=>{
+      } else {
+      modalContent.querySelectorAll('.mode-card[data-mode]').forEach(card=>{
         card.addEventListener('click', ()=>{
           pendingMode = card.dataset.mode;
           if(pendingMode==='extreme') pendingSize = 8;
+          renderSettingsModal('mode');
+        });
+      });
+      // テトリス：ソロ/VS AI 切り替え
+      modalContent.querySelectorAll('.mode-card[data-tetris-sub]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          tetrisSubMode = card.dataset.tetrisSub;
+          renderSettingsModal('mode');
+        });
+      });
+      // テトリス：AI難易度切り替え
+      modalContent.querySelectorAll('.mode-card[data-ai-diff]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          aiDifficulty = card.dataset.aiDiff;
           renderSettingsModal('mode');
         });
       });
@@ -4228,8 +4337,27 @@ function tetrisTriggerGameOver(){
       playSound('coin');
     }
     tetrisPlayerScoreEl.textContent = tetrisScore;
-    // ★プレイヤーが先に詰まったらAIの勝ち
-    endTetrisVsMatch('player');
+    // ★VS AI ならAIと勝負、ソロなら通常ゲームオーバー
+    if(tetrisVsMode){
+      endTetrisVsMatch('player');
+    } else {
+      endTetrisSolo(earned);
+    }
+  }
+
+  // ソロモードのゲームオーバー表示
+  function endTetrisSolo(earned){
+    tetrisStopLoop();
+    tetrisActive = false;
+    const isNewBest = tetrisScore >= tetrisBest && tetrisScore > 0;
+    finalScoreEl.innerHTML = ''; // VSモードで書き換えた中身をクリア
+    finalScoreEl.textContent = tetrisScore;
+    newBestNoteEl.textContent = isNewBest ? '🎉 ハイスコア更新！' : 'お疲れさまでした！';
+    coinEarnedNoteEl.textContent = earned>0 ? `🪙 +${earned} コイン獲得！` : '';
+    duelResultNoteEl.textContent = '';
+    overlayEl.classList.add('show');
+    if(authToken) syncToServer(tetrisScore);
+    syncPlayTime();
   }
 
 // VS対戦の結果表示（loser は 'player' or 'ai'）
@@ -4289,8 +4417,12 @@ function tetrisTriggerGameOver(){
     tetrisPlayerScoreEl.textContent = '0';
     renderTetrisHold();
     tetrisSpawnPiece();
-    // AIもリセット
-    startAi();
+    // ★VS AIモードのときだけAIを起動する
+    if(tetrisVsMode){
+      startAi();
+    } else {
+      stopAi();
+    }
   }
 
 // ===================== 🤖 AI対戦ロジック =====================
@@ -4428,27 +4560,129 @@ function tetrisTriggerGameOver(){
   }
 
   // AIの最善手を計算
-  function findBestAiMove(){
-    if(!aiPiece) return null;
+  // 現在の難易度設定を取得
+  function getAiDiff(){
+    return AI_DIFFICULTIES[aiDifficulty] || AI_DIFFICULTIES.normal;
+  }
+
+  // 全候補手を列挙（回転×列）
+  function getAllAiCandidates(){
     const rotations = getRotations(aiPiece.matrix);
-    let bestScore = -Infinity;
-    let bestMove = null;
+    const candidates = [];
     for(const matrix of rotations){
       for(let col = -matrix.length; col < TETRIS_COLS; col++){
-        // 落下先を求める
         let row = -1;
         while(!aiCollides(matrix, row + 1, col)) row++;
         if(row < 0) continue;
-        // 天井付近で埋まる手は避ける
-        if(row === -1) continue;
-        const score = evaluateAiBoard(aiGrid, matrix, row, col, aiPiece.color);
-        if(score > bestScore){
-          bestScore = score;
-          bestMove = { matrix, row, col };
+        candidates.push({ matrix, row, col });
+      }
+    }
+    return candidates;
+  }
+
+  // 仮盤面を作って、ライン消去後のグリッドを返す
+  function simulatePlacement(grid, matrix, row, col, color){
+    const temp = grid.map(r => r.slice());
+    for(let r=0;r<matrix.length;r++){
+      for(let c=0;c<matrix[r].length;c++){
+        if(!matrix[r][c]) continue;
+        const gr = row+r, gc = col+c;
+        if(gr>=0 && gr<TETRIS_ROWS && gc>=0 && gc<TETRIS_COLS){
+          temp[gr][gc] = color;
         }
       }
     }
-    return bestMove;
+    // 揃った行を消す
+    for(let r=TETRIS_ROWS-1;r>=0;r--){
+      if(temp[r].every(v => v !== -1)){
+        temp.splice(r, 1);
+        temp.unshift(new Array(TETRIS_COLS).fill(-1));
+        r++;
+      }
+    }
+    return temp;
+  }
+
+  // 盤面そのものを評価（仮置き後の状態を渡す）
+  function evaluateGridOnly(grid){
+    let aggregateHeight = 0, holes = 0, bumpiness = 0, maxHeight = 0;
+    const heights = [];
+    for(let c=0;c<TETRIS_COLS;c++){
+      let h = 0, foundBlock = false, holeCount = 0;
+      for(let r=0;r<TETRIS_ROWS;r++){
+        if(grid[r][c] !== -1){
+          if(!foundBlock){ h = TETRIS_ROWS - r; foundBlock = true; }
+        } else if(foundBlock){ holeCount++; }
+      }
+      heights.push(h);
+      aggregateHeight += h;
+      holes += holeCount;
+      maxHeight = Math.max(maxHeight, h);
+    }
+    for(let c=0;c<TETRIS_COLS-1;c++){
+      bumpiness += Math.abs(heights[c] - heights[c+1]);
+    }
+    return -0.51 * aggregateHeight - 0.76 * holes - 0.18 * bumpiness - 0.08 * maxHeight;
+  }
+
+  // 難易度別の最善手を計算
+  function findBestAiMove(){
+    if(!aiPiece) return null;
+    const diff = getAiDiff();
+    const candidates = getAllAiCandidates();
+    if(candidates.length === 0) return null;
+
+    // ★難易度「史上最強」だけ1手先読みする
+    if(diff.lookahead){
+      const nextType = aiNextType || 'T';
+      const nextDef = TETROMINOES[nextType];
+      const nextMatrix = nextDef.matrix.map(r => r.slice());
+      const nextColor = nextDef.color;
+      const nextRots = getRotations(nextMatrix);
+
+      let bestScore = -Infinity;
+      let bestMove = null;
+      for(const mv of candidates){
+        // 1手目を仮置き
+        const midGrid = simulatePlacement(aiGrid, mv.matrix, mv.row, mv.col, aiPiece.color);
+        // 2手目のベスト評価を探す
+        let bestNext = -Infinity;
+        let anyNext = false;
+        for(const nm of nextRots){
+          for(let ncol = -nm.length; ncol < TETRIS_COLS; ncol++){
+            let nrow = -1;
+            while(!aiCollides(nm, nrow + 1, ncol, midGrid)) nrow++;
+            if(nrow < 0) continue;
+            const nGrid = simulatePlacement(midGrid, nm, nrow, ncol, nextColor);
+            const s = evaluateGridOnly(nGrid);
+            if(s > bestNext){ bestNext = s; anyNext = true; }
+          }
+        }
+        if(!anyNext) bestNext = -9999; // 次のピースが置けない=詰み
+        if(bestNext > bestScore){
+          bestScore = bestNext;
+          bestMove = mv;
+        }
+      }
+      return bestMove || candidates[0];
+    }
+
+    // それ以外: 現在の評価関数でスコアを計算し、ノイズとランダム性を加味
+    const scored = candidates.map(c => {
+      const base = evaluateAiBoard(aiGrid, c.matrix, c.row, c.col, aiPiece.color);
+      const score = base * diff.weightScale + (Math.random() - 0.5) * diff.noise;
+      return { ...c, score };
+    });
+
+    // ランダムで適当な手を選ぶ確率
+    if(Math.random() < diff.randomChance){
+      return scored[Math.floor(Math.random() * scored.length)];
+    }
+
+    // ベスト手を選ぶ
+    let best = scored[0];
+    for(const c of scored){ if(c.score > best.score) best = c; }
+    return best;
   }
 
   function aiLockPiece(){
@@ -4509,8 +4743,9 @@ function tetrisTriggerGameOver(){
     tetrisAiScoreEl.textContent = '0';
     aiSpawnPiece();
     if(aiTimer) clearInterval(aiTimer);
-    // 650msごとに1手打つ（速すぎず遅すぎず）
-    aiTimer = setInterval(aiTick, 650);
+    // ★難易度ごとの速度で1手打つ
+    const diff = getAiDiff();
+    aiTimer = setInterval(aiTick, diff.speed);
   }
 
   function stopAi(){
@@ -4534,14 +4769,27 @@ function tetrisTriggerGameOver(){
 
 function enterTetrisMode(){
     currentMode = 'tetris';
+    // ソロ/VS AIをフラグに反映
+    tetrisVsMode = (tetrisSubMode === 'vs');
+    // 難易度が不正ならnormalに戻す
+    if(!AI_DIFFICULTIES[aiDifficulty]) aiDifficulty = 'normal';
+
+    // レイアウト切り替え
+    if(tetrisVsMode){
+      tetrisWrapEl.classList.remove('solo-mode');
+      tetrisWrapEl.classList.add('vs-mode');
+    } else {
+      tetrisWrapEl.classList.remove('vs-mode');
+      tetrisWrapEl.classList.add('solo-mode');
+    }
+
     updateModeBadge();
     boardWrapEl.style.display = 'none';
     trayEl.style.display = 'none';
     tetrisWrapEl.style.display = 'flex';
     saveSettings();
     startPlayTimeTracking();
-    restartTetris();
-    startAi();
+    restartTetris(); // 内部で tetrisVsMode に応じてAI起動/停止
     document.addEventListener('touchmove', preventMultiTouchZoom, { passive:false });
     document.addEventListener('touchstart', preventMultiTouchZoom, { passive:false });
   }
