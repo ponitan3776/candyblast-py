@@ -108,6 +108,40 @@ transition: filter 0.2s ease;
     0%{ background-position:200% 200%; }
     100%{ background-position:-50% -50%; }
   }
+
+  /* ===== 🆕 アニメーションスキン: ブロック自体が常時動き続ける新しい種類のスキン ===== */
+  /* パン(流れる): 多色グラデーションを大きめのbackground-sizeで敷き、position をゆっくり往復させる */
+  body[data-living-anim="pan"] .cell.filled,
+  body[data-living-anim="pan"] .tetris-cell.filled{
+    background-size:280% 280% !important;
+    animation:livingSkinPan 5s ease-in-out infinite;
+  }
+  @keyframes livingSkinPan{
+    0%{ background-position:0% 50%; }
+    50%{ background-position:100% 50%; }
+    100%{ background-position:0% 50%; }
+  }
+  /* パルス(鼓動): 明るさとわずかな拡大縮小を心拍のようなリズムで繰り返す */
+  body[data-living-anim="pulse"] .cell.filled,
+  body[data-living-anim="pulse"] .tetris-cell.filled{
+    animation:livingSkinPulse 1.15s cubic-bezier(0.4,0,0.2,1) infinite;
+  }
+  @keyframes livingSkinPulse{
+    0%, 100%{ filter:brightness(1) saturate(1); transform:scale(1); }
+    18%{ filter:brightness(1.4) saturate(1.5); transform:scale(1.05); }
+    32%{ filter:brightness(1) saturate(1); transform:scale(1); }
+    46%{ filter:brightness(1.25) saturate(1.35); transform:scale(1.03); }
+    62%{ filter:brightness(1) saturate(1); transform:scale(1); }
+  }
+  /* 色相回転: 色そのものを渦のように連続的に回し続ける */
+  body[data-living-anim="hue"] .cell.filled,
+  body[data-living-anim="hue"] .tetris-cell.filled{
+    animation:livingSkinHue 4s linear infinite;
+  }
+  @keyframes livingSkinHue{
+    0%{ filter:hue-rotate(0deg); }
+    100%{ filter:hue-rotate(360deg); }
+  }
   #board{ position:relative; width:100%; height:100%; display:grid; grid-template-columns:repeat(8,1fr);
     grid-template-rows:repeat(8,1fr); gap:4px; background:var(--panel); border-radius:20px; padding:8px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05); }
