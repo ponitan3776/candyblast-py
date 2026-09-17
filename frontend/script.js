@@ -151,7 +151,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     history: {
       label: '👑 史上最強',
       desc: '1手先読みで最強。もう勝てません。',
-      speed: 32,
+      speed: 0,
       randomChance: 0,
       weightScale: 1.0,
       noise: 0,
