@@ -2,6 +2,9 @@
 
 const API_BASE_URL = 'https://pinkyburst.onrender.com';
 
+// ★管理者アカウントを 'admin' から 'spirit' へ移行(バックエンドのADMIN_USER_IDと合わせること)
+const ADMIN_USER_ID = 'spirit';
+
 // ===================== 🎵 音楽ライブラリ =====================
   // 曲を追加するときは、この配列に1行足すだけ！
   // ファイルは frontend/bgm/ の中に置く
@@ -806,12 +809,59 @@ const PATTERN_LABELS = {
       ] }
   );
 
+  // ===================== 🆕 アニメーションスキン(色や模様ではなく「動き」で新しい視点を持たせた特別枠) =====================
+  // これまでのスキンは全て静止したグラデーションだったが、ここではブロック自体が
+  // 常時アニメーションする(animType で描画方法が変わる)。単なる色替えでは出せない
+  // 「生きている」ような質感を狙った、既存スキンとは全く違う切り口の追加。
+  SKINS.push(
+    { id:'chromaflow', name:'💫 クロマフロー', price:2400, animType:'pan',
+      desc:'色が絶えず流れ続ける、生きているようなキャンディ。ブロックの中で虹色がゆらめき続ける。',
+      vars:{ '--bg-deep':'#0a0518','--bg-deep2':'#160a2c','--panel':'#221446','--panel-light':'#32205e',
+        '--gold':'#FFD166','--coral':'#FF6B9D','--mint':'#4DFFC8','--blue':'#4D9DFF','--purple':'#B166FF',
+        '--pink':'#FF6BC8','--lime':'#C8FF4D','--text':'#F5F3FF','--text-dim':'#A89AD9' },
+      titleGrad:'linear-gradient(90deg,#FFD166,#FF6BC8,#4D9DFF)',
+      colors:[
+        {bg:'linear-gradient(120deg,#FF6B9D 0%,#FFD166 25%,#4DFFC8 50%,#4D9DFF 75%,#B166FF 100%)'},
+        {bg:'linear-gradient(120deg,#4DFFC8 0%,#4D9DFF 25%,#B166FF 50%,#FF6BC8 75%,#FFD166 100%)'},
+        {bg:'linear-gradient(120deg,#B166FF 0%,#FF6BC8 25%,#FFD166 50%,#4DFFC8 75%,#4D9DFF 100%)'},
+        {bg:'linear-gradient(120deg,#FFD166 0%,#4DFFC8 25%,#4D9DFF 50%,#B166FF 75%,#FF6B9D 100%)'},
+        {bg:'linear-gradient(120deg,#4D9DFF 0%,#B166FF 25%,#FF6BC8 50%,#FFD166 75%,#4DFFC8 100%)'},
+        {bg:'linear-gradient(120deg,#FF6BC8 0%,#4DFFC8 25%,#FFD166 50%,#FF6B9D 75%,#B166FF 100%)'},
+        {bg:'linear-gradient(120deg,#C8FF4D 0%,#4D9DFF 25%,#FF6B9D 50%,#FFD166 75%,#4DFFC8 100%)'}
+      ] },
+    { id:'heartbeat', name:'💗 ハートビート・キャンディ', price:2000, animType:'pulse',
+      desc:'鼓動のようにドクドクと明滅する、生命感あふれるスキン。じっと見ると少しドキドキする。',
+      vars:{ '--bg-deep':'#1a050c','--bg-deep2':'#2c0a18','--panel':'#461428','--panel-light':'#5e2038',
+        '--gold':'#FFC1D9','--coral':'#FF4D6D','--mint':'#FF8FA8','--blue':'#FF6B8F','--purple':'#FF3D5C',
+        '--pink':'#FF6B9D','--lime':'#FFB8C8','--text':'#FFF0F4','--text-dim':'#D98AA0' },
+      titleGrad:'linear-gradient(90deg,#FF4D6D,#FFC1D9)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FF8FA8,#FF4D6D)'},{bg:'linear-gradient(135deg,#FF6B8F,#E8305A)'},
+        {bg:'linear-gradient(135deg,#FFB8C8,#FF6B9D)'},{bg:'linear-gradient(135deg,#FF3D5C,#C81840)'},
+        {bg:'linear-gradient(135deg,#FFC1D9,#FF8FB0)'},{bg:'linear-gradient(135deg,#FF4D6D,#D82048)'},
+        {bg:'linear-gradient(135deg,#FF7090,#E83060)'}
+      ] },
+    { id:'prismspin', name:'🌀 プリズムスピン', price:2600, animType:'hue',
+      desc:'虹色が渦を巻くように色相そのものが回転し続ける、めまぐるしいスキン。',
+      vars:{ '--bg-deep':'#08081a','--bg-deep2':'#101030','--panel':'#1a1a48','--panel-light':'#26266a',
+        '--gold':'#FFD966','--coral':'#FF6666','--mint':'#66FFCC','--blue':'#6699FF','--purple':'#B366FF',
+        '--pink':'#FF66CC','--lime':'#CCFF66','--text':'#F5F5FF','--text-dim':'#9C9CD9' },
+      titleGrad:'linear-gradient(90deg,#FF6666,#FFD966,#66FFCC,#6699FF,#B366FF)',
+      colors:[
+        {bg:'linear-gradient(135deg,#FF6666,#FFD966)'},{bg:'linear-gradient(135deg,#FFD966,#66FFCC)'},
+        {bg:'linear-gradient(135deg,#66FFCC,#6699FF)'},{bg:'linear-gradient(135deg,#6699FF,#B366FF)'},
+        {bg:'linear-gradient(135deg,#B366FF,#FF66CC)'},{bg:'linear-gradient(135deg,#FF66CC,#FF6666)'},
+        {bg:'linear-gradient(135deg,#CCFF66,#66FFCC)'}
+      ] }
+  );
+
   SKINS.push(...GACHA_SKINS);
 
   // ===================== 模様入りスキンを自動生成（既存パレット×パターンの組み合わせ）=====================
   // 通常スキンより高価に設定し、ボードの各ブロックに柄（ストライプ・ドットなど）を重ねて描画する
   (function generatePatternedSkins(){
-    const plainSkins = SKINS.filter(s=>!s.gacha);
+    // アニメーションスキンは「動き」自体が個性なので、柄バリエーションの自動生成対象からは除外する
+    const plainSkins = SKINS.filter(s=>!s.gacha && !s.animType);
     const patternKeys = Object.keys(PATTERN_LAYERS);
     const N = patternKeys.length;
 
@@ -1504,7 +1554,7 @@ function ensurePlayable(){
 
   function fillTray(){
     let availableShapes = SHAPES;
-    if (currentUserId === 'admin' && adminDisabledBlocks.length > 0) {
+    if (currentUserId === ADMIN_USER_ID && adminDisabledBlocks.length > 0) {
       availableShapes = SHAPES.filter((_, idx) => !adminDisabledBlocks.includes(idx));
       if (availableShapes.length === 0) availableShapes = SHAPES;
     }
@@ -1568,7 +1618,7 @@ function ensurePlayable(){
   }
   function checkGameOver(){
     try{
-      if (currentUserId === 'admin' && adminSafetyMode) {
+      if (currentUserId === ADMIN_USER_ID && adminSafetyMode) {
         if (tray.every(p => p.used)) fillTray();
         return;
       }
@@ -2273,6 +2323,19 @@ function issueNewQuest(excludePoolIds){
     return baseColors.map(c=>({ bg: `${layer}, ${c.bg}` }));
   }
 
+  // ★バグ修正: ショップ一覧の小さいスワッチだと柄の不透明度が薄すぎて、
+  // 無地スキンとその柄違いバリエーション(同じ色・同じ価格で1文字違いの名前)が
+  // ほぼ同じ見た目になり「同じスキンが被って並んでいる」ように見えてしまっていた。
+  // ゲーム盤面(buildPatternedColors)はそのままに、一覧プレビューだけ柄を強調して見分けやすくする。
+  function buildPatternedColorsForPreview(baseColors, patternKey){
+    if(!patternKey || !PATTERN_LAYERS[patternKey]) return baseColors;
+    const boosted = PATTERN_LAYERS[patternKey].replace(
+      /rgba\(([^,]+),([^,]+),([^,]+),\s*([\d.]+)\)/g,
+      (m, r, g, b, a) => `rgba(${r},${g},${b},${Math.min(1, parseFloat(a) * 2.2).toFixed(2)})`
+    );
+    return baseColors.map(c=>({ bg: `${boosted}, ${c.bg}` }));
+  }
+
   function applySkin(id){
     const skin = SKINS.find(s=>s.id===id) || SKINS[0];
     equippedSkin = skin.id;
@@ -2287,6 +2350,9 @@ const titleEl = document.querySelector('.title');
       });
     }
     document.body.classList.toggle('gacha-shimmer-active', !!skin.gachaEffect);
+    // ★アニメーションスキン: ブロック自体が常時動き続ける新しい種類のスキン
+    if(skin.animType){ document.body.setAttribute('data-living-anim', skin.animType); }
+    else { document.body.removeAttribute('data-living-anim'); }
     renderTray();
   }
 
@@ -2458,11 +2524,11 @@ const titleEl = document.querySelector('.title');
       const canBuy = !owned && !skin.gacha && coins >= skin.price;
       let btnLabel = equipped ? '装備中' : owned ? '装備する' : (skin.gacha ? '🎰ガチャ限定' : (skin.price===0 ? '入手する' : (canBuy ? '購入する' : 'コインが足りません')));
       let btnAction = equipped ? '' : owned ? 'equip' : (skin.gacha ? '' : 'buy');
-      const swatchColors = buildPatternedColors(skin.colors, skin.pattern);
+      const swatchColors = buildPatternedColorsForPreview(skin.colors, skin.pattern);
       if(skin.gacha && !owned) return; // 未入手のガチャ限定スキンはカードごと非表示(ガチャフィルタでは「持っていない」ことが分かればよい)
       html += `
         <div class="quest-item">
-          <div class="qtitle">${skin.name}${equipped?' ✅':''}${skin.pattern?' <span class="coin-tag">柄物</span>':''}${skin.gacha?' <span class="coin-tag">🎰限定</span>':''}</div>
+          <div class="qtitle">${skin.name}${equipped?' ✅':''}${skin.pattern?' <span class="coin-tag">柄物</span>':''}${skin.gacha?' <span class="coin-tag">🎰限定</span>':''}${skin.animType?' <span class="coin-tag">✨アニメーション</span>':''}</div>
           <div class="sub" style="margin:2px 0 8px;">${skin.desc}</div>
           <div class="skin-swatches">${swatchColors.map(c=>`<span class="swatch" style="background:${c.bg}"></span>`).join('')}</div>
           <div class="quest-foot" style="margin-top:8px;">
@@ -2933,9 +2999,10 @@ restartBtn.addEventListener('click', ()=>{
   function updateAccountButton(){
     accountBtn.textContent = currentUserId ? '👤' : '👤';
     accountBtn.title = currentUserId ? `ログイン中: ${currentUserId}` : '未ログイン';
-    if (currentUserId === 'admin') {
+    if (currentUserId === ADMIN_USER_ID) {
       adminPanelBtn.style.display = 'flex';
       loadAdminSettings();
+      grantAllSkinsIfAdmin();
     } else {
       adminPanelBtn.style.display = 'none';
     }
@@ -3217,7 +3284,7 @@ restartBtn.addEventListener('click', ()=>{
 
   // ===================== 管理者設定 =====================
   async function loadAdminSettings() {
-    if (!authToken || currentUserId !== 'admin') return;
+    if (!authToken || currentUserId !== ADMIN_USER_ID) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/block-settings`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
@@ -3230,8 +3297,32 @@ restartBtn.addEventListener('click', ()=>{
     } catch(e) {}
   }
 
+  // ★管理者アカウントには全スキンを無料で贈呈する。
+  // 通常のショップ購入/ガチャを一切介さず、専用API(/api/admin/grant-all-skins)へ
+  // 「今このフロントエンドが把握している全スキンID」を送って、まとめて所持済みにする。
+  async function grantAllSkinsIfAdmin() {
+    if (!authToken || currentUserId !== ADMIN_USER_ID) return;
+    try {
+      const allSkinIds = SKINS.map(s => s.id);
+      const missing = allSkinIds.filter(id => !ownedSkins.includes(id));
+      if (missing.length === 0) return; // すでに全部持っている
+      const res = await fetch(`${API_BASE_URL}/api/admin/grant-all-skins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ skinIds: allSkinIds })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.skins) {
+          ownedSkins = data.skins;
+          saveSkinsData();
+        }
+      }
+    } catch (e) {}
+  }
+
   async function executeAdminCommand(cmd) {
-    if (!authToken || currentUserId !== 'admin') return '❌ 管理者権限がありません';
+    if (!authToken || currentUserId !== ADMIN_USER_ID) return '❌ 管理者権限がありません';
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/command`, {
         method: 'POST',
@@ -3381,7 +3472,7 @@ restartBtn.addEventListener('click', ()=>{
   }
 
   adminPanelBtn.addEventListener('click', () => {
-    if (currentUserId === 'admin') {
+    if (currentUserId === ADMIN_USER_ID) {
       renderAdminPanel();
       modalOverlay.classList.add('show');
     }
@@ -4238,9 +4329,10 @@ restartBtn.addEventListener('click', ()=>{
 
 // ===================== 🤖 AI対戦用の状態 =====================
   let aiGrid = null, aiPiece = null, aiNextType = null, aiBag = [];
-  let aiScore = 0, aiLevel = 1, aiLines = 0;
+  let aiScore = 0, aiLevel = 1, aiLines = 0, aiCombo = 0, aiBackToBack = false;
   let aiActive = false, aiGameOver = false;
   let aiTimer = null, aiCellEls = [];
+  let aiGravityTimer = null; // ★プレイヤーと同じ「重力落下」タイマー(難易度の思考速度とは別に動く)
 
   const tetrisPlayerScoreEl = document.getElementById('tetrisPlayerScore');
   const tetrisAiScoreEl = document.getElementById('tetrisAiScore');
@@ -4368,8 +4460,12 @@ restartBtn.addEventListener('click', ()=>{
     tetrisLinesEl.textContent = tetrisLines;
   }
 
+  // ★プレイヤー・AI共通の「レベルに応じた自然落下スピード」計算(以前はAI専用の別ロジックだったのを統一)
+  function dropIntervalForLevel(level){
+    return Math.max(90, 1000 - (level-1)*70);
+  }
   function tetrisDropIntervalMs(){
-    return Math.max(90, 1000 - (tetrisLevel-1)*70);
+    return dropIntervalForLevel(tetrisLevel);
   }
   function tetrisStopLoop(){
     if(tetrisTimer){ clearInterval(tetrisTimer); tetrisTimer = null; }
@@ -4949,34 +5045,76 @@ function tetrisTriggerGameOver(){
     for(let r=0;r<TETRIS_ROWS;r++){
       if(aiGrid[r].every(v => v !== -1)) cleared.push(r);
     }
+    // ★スコア計算をプレイヤー(tetrisLockPiece)と完全に同じルールに統一
+    // (以前はコンボ倍率・バックトゥバックボーナスがAI側に一切無く、単純に基本点×レベルのみだった)
     if(cleared.length > 0){
+      aiCombo++;
+      const isTetris4 = cleared.length === 4;
+      let gained = TETRIS_LINE_POINTS[cleared.length] * aiLevel;
+      const comboBonus = aiCombo > 1 ? Math.round(50 * aiCombo * aiLevel) : 0;
+      const btbMult = (isTetris4 && aiBackToBack) ? 1.5 : 1;
+      aiBackToBack = isTetris4;
+      gained = Math.round(gained * btbMult) + comboBonus;
+
       cleared.slice().sort((a,b)=>a-b).forEach(r=>{
         aiGrid.splice(r, 1);
         aiGrid.unshift(new Array(TETRIS_COLS).fill(-1));
       });
       aiLines += cleared.length;
       aiLevel = Math.floor(aiLines/10)+1;
-      aiScore += TETRIS_LINE_POINTS[cleared.length] * aiLevel;
+      aiScore += gained;
+    } else {
+      aiCombo = 0;
     }
     aiPiece = null;
     tetrisAiScoreEl.textContent = aiScore;
   }
 
   // ===================== 🤖 AIの手を1手ずつ実行する =====================
-  // 以前は「最善手の位置へ瞬間移動→即ロック」というテレポートのような動きだった。
-  // ここでは回転・左右移動・ソフトドロップを1tickにつき1アクションずつ行い、
-  // 最後にハードドロップして人間らしい動きに見えるようにする。
+  // 以前は「最善手の位置へ瞬間移動→即ロック」というテレポートのような動きで、
+  // しかも思考中はピースが自然落下せず(重力なし)、プレイヤーには無い猶予時間があった。
+  // ここでは、プレイヤーと全く同じ重力タイマー(aiGravityTick)を常時並行して走らせ、
+  // 難易度ごとの思考速度(aiTick)は「回転・左右移動・決めたら即ハードドロップ」という
+  // 純粋な操作判断だけを担当するようにして、盤面の落下挙動をプレイヤーと揃えている。
   let aiPlan = null;
 
   function matrixKey(m){
     return m.map(row => row.join('')).join('|');
   }
 
-  function aiTick(){
-    if(!aiActive || aiGameOver) return;
-    if(!aiPiece){
-      if(!aiSpawnPiece()) return;
+  // ピースを1つ確定させ、採点・次のピース生成・重力タイマーの再スタートまで行う共通処理
+  function aiFinishPiece(){
+    aiLockPiece();
+    aiPlan = null;
+    renderAiBoard();
+    if(aiGameOver) return;
+    const spawned = aiSpawnPiece();
+    renderAiBoard();
+    if(!spawned || aiGameOver) return; // ゲームオーバーになった場合は重力タイマーを再スタートしない
+    startAiGravity(); // ★新しいピース&レベルに合わせて、プレイヤーと同じ計算式で重力を再スタート
+  }
+
+  // ===== 重力タイマー: プレイヤーのtetrisTickと全く同じ間隔・ロジックで自然落下させる =====
+  function aiGravityTick(){
+    if(!aiActive || aiGameOver || !aiPiece) return;
+    if(!aiCollides(aiPiece.matrix, aiPiece.row + 1, aiPiece.col)){
+      aiPiece.row++;
+      renderAiBoard();
+    } else {
+      aiFinishPiece();
     }
+  }
+  function startAiGravity(){
+    if(aiGravityTimer) clearInterval(aiGravityTimer);
+    aiGravityTimer = setInterval(aiGravityTick, dropIntervalForLevel(aiLevel));
+  }
+  function stopAiGravity(){
+    if(aiGravityTimer){ clearInterval(aiGravityTimer); aiGravityTimer = null; }
+  }
+
+  // ===== 思考タイマー: 難易度ごとの速さで回転・移動を決め、狙い通りになったら人間と同じくハードドロップする =====
+  function aiTick(){
+    if(!aiActive || aiGameOver || !aiPiece) return;
 
     // ピースごとに「どこに・どの向きで置くか」を最初に1回だけ決める
     if(!aiPlan){
@@ -4987,8 +5125,7 @@ function tetrisTriggerGameOver(){
       }
       aiPlan = {
         targetMatrixKey: matrixKey(move.matrix),
-        targetCol: move.col,
-        softDropCount: 0
+        targetCol: move.col
       };
     }
 
@@ -5025,44 +5162,34 @@ function tetrisTriggerGameOver(){
       return;
     }
 
-    // 3. ソフトドロップ: 数回だけ落下を見せてからハードドロップ
-    const VISIBLE_SOFT_DROPS = 3;
-    if(aiPlan.softDropCount < VISIBLE_SOFT_DROPS
-       && !aiCollides(aiPiece.matrix, aiPiece.row + 1, aiPiece.col)){
-      aiPiece.row++;
-      aiPlan.softDropCount++;
-      renderAiBoard();
-      return;
-    }
-
-    // 4. ハードドロップで一気に落とす
+    // 3. 狙い通りの向き・列に着いたら、プレイヤーのハードドロップと同じ即落下+加点(距離×2)を行う
+    let dist = 0;
     while(!aiCollides(aiPiece.matrix, aiPiece.row + 1, aiPiece.col)){
       aiPiece.row++;
+      dist++;
     }
-    aiLockPiece();
-    aiPlan = null;
-    renderAiBoard();
-    // 次のピースを出す
-    aiSpawnPiece();
-    renderAiBoard();
+    if(dist > 0) aiScore += dist * 2;
+    aiFinishPiece();
   }
 
   function startAi(){
     aiGrid = Array.from({length:TETRIS_ROWS}, ()=>new Array(TETRIS_COLS).fill(-1));
-    aiScore = 0; aiLevel = 1; aiLines = 0;
+    aiScore = 0; aiLevel = 1; aiLines = 0; aiCombo = 0; aiBackToBack = false;
     aiGameOver = false; aiActive = true; aiBag = [];
     aiPiece = null; aiNextType = tetrisRandomType();
     initAiTetrisBoard();
     tetrisAiScoreEl.textContent = '0';
     aiSpawnPiece();
+    // ★難易度ごとの速度は「思考(操作判断)の速さ」だけを表し、落下自体は重力タイマーが別途プレイヤーと同じ規則で担当する
     if(aiTimer) clearInterval(aiTimer);
-    // ★難易度ごとの速度で1手打つ
     const diff = getAiDiff();
     aiTimer = setInterval(aiTick, diff.speed);
+    startAiGravity();
   }
 
   function stopAi(){
     if(aiTimer){ clearInterval(aiTimer); aiTimer = null; }
+    stopAiGravity();
     aiActive = false;
   }
 
