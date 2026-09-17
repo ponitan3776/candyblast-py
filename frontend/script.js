@@ -4466,9 +4466,8 @@ document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
   let musicSearchQuery = '';
   let musicCategoryFilter = 'すべて';
 
-  function renderMusicModal(){
-    modalContent.dataset.mode = 'music';
-
+  // フィルタ条件に合う曲のリストを返す
+  function getFilteredMusicList(){
     let list = MUSIC_LIBRARY.slice();
     if(musicCategoryFilter !== 'すべて'){
       list = list.filter(t => t.category === musicCategoryFilter);
@@ -4481,9 +4480,47 @@ document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
         t.category.toLowerCase().includes(q)
       );
     }
+    return list;
+  }
+
+  // リスト部分だけを再描画する(検索ボックスは触らないのでIMEが壊れない)
+  function renderMusicList(){
+    const listEl = document.getElementById('musicListArea');
+    const countEl = document.getElementById('musicCountLabel');
+    if(!listEl) return;
+    const list = getFilteredMusicList();
+    if(countEl) countEl.textContent = `${list.length} 件`;
+
+    if(list.length === 0){
+      listEl.innerHTML = `<div class="empty-hint">該当する曲が見つかりませんでした。</div>`;
+      return;
+    }
+    listEl.innerHTML = list.map(track => {
+      const isPlaying = track.file === bgmCurrentFile;
+      return `
+        <div class="quest-item music-item" data-musicfile="${escapeHtml(track.file)}"
+             style="cursor:pointer; ${isPlaying?'border:2px solid var(--gold);':''}">
+          <div class="qtitle">${track.emoji||'🎵'} ${escapeHtml(track.title)} ${isPlaying?'<span class="coin-tag">再生中</span>':''}</div>
+          <div class="sub" style="margin-top:4px;">${escapeHtml(track.artist)} ・ ${escapeHtml(track.category)}</div>
+        </div>`;
+    }).join('');
+    // 曲タップのイベントを貼り直す
+    listEl.querySelectorAll('.music-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const file = el.dataset.musicfile;
+        if(!file) return;
+        playBgmTrack(file);
+        bgmEnabled = true;
+        renderMusicList();
+      });
+    });
+  }
+
+  function renderMusicModal(){
+    modalContent.dataset.mode = 'music';
 
     const currentTrack = MUSIC_LIBRARY.find(t => t.file === bgmCurrentFile);
-    let html = `
+    modalContent.innerHTML = `
       <h2 style="color:var(--gold);">🎵 音楽</h2>
       <div class="sub" style="margin-bottom:10px;">好きな曲を選んで再生できます。今: <b style="color:var(--mint);">${currentTrack ? escapeHtml(currentTrack.title) : '停止中'}</b></div>
 
@@ -4496,51 +4533,24 @@ document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
         `).join('')}
       </div>
 
-      <div class="sub" style="margin-bottom:6px;">${list.length} 件</div>
-    `;
+      <div class="sub" style="margin-bottom:6px;"><span id="musicCountLabel"></span></div>
+      <div id="musicListArea"></div>
 
-    if(list.length === 0){
-      html += `<div class="empty-hint">該当する曲が見つかりませんでした。</div>`;
-    } else {
-      list.forEach(track => {
-        const isPlaying = track.file === bgmCurrentFile;
-        html += `
-          <div class="quest-item music-item" data-musicfile="${escapeHtml(track.file)}"
-               style="cursor:pointer; ${isPlaying?'border:2px solid var(--gold);':''}">
-            <div class="qtitle">${track.emoji||'🎵'} ${escapeHtml(track.title)} ${isPlaying?'<span class="coin-tag">再生中</span>':''}</div>
-            <div class="sub" style="margin-top:4px;">${escapeHtml(track.artist)} ・ ${escapeHtml(track.category)}</div>
-          </div>`;
-      });
-    }
-
-    html += `
       <button class="ghost-btn" id="musicStopBtn" style="margin-top:10px;">⏹ BGMを停止する</button>
     `;
 
-    modalContent.innerHTML = html;
-
+    // ★検索ボックスは「input」イベントで「リストだけ」を再描画する
+    // → 検索ボックス自体は作り直されないので、IMEが途中でキャンセルされない
     const searchEl = document.getElementById('musicSearchInput');
     searchEl.addEventListener('input', (e)=>{
       musicSearchQuery = e.target.value;
-      const pos = e.target.selectionStart;
-      renderMusicModal();
-      const newInput = document.getElementById('musicSearchInput');
-      if(newInput){ newInput.focus(); newInput.setSelectionRange(pos, pos); }
+      renderMusicList();
     });
 
     modalContent.querySelectorAll('.music-cat-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         musicCategoryFilter = btn.dataset.mcat;
-        renderMusicModal();
-      });
-    });
-
-    modalContent.querySelectorAll('.music-item').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const file = el.dataset.musicfile;
-        if(!file) return;
-        playBgmTrack(file);
-        bgmEnabled = true;
+        // カテゴリ変更時はタブの見た目も変えたいのでモーダル全体を再描画(検索キーワードは保持)
         renderMusicModal();
       });
     });
@@ -4553,6 +4563,9 @@ document.getElementById('titleOtherGamesBtn').addEventListener('click', ()=>{
       updateMusicButton();
       renderMusicModal();
     });
+
+    // 初回リスト描画
+    renderMusicList();
   }
 
 // ===================== 🎮 別のゲーム =====================
