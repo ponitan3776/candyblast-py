@@ -618,3 +618,23 @@ transition: filter 0.2s ease;
   #tetrisHoldBox, #tetrisNext{ width:56px; height:56px; padding:4px; }
   .vs-badge{ font-size:14px; }
 }
+
+/* ===================== テトリス ソロモード ===================== */
+/* ソロモード時はAI側とVSバッジを隠す */
+#tetris-wrap.solo-mode #tetrisAiSide,
+#tetris-wrap.solo-mode .vs-badge {
+  display: none;
+}
+#tetris-wrap.solo-mode .tetris-vs-layout {
+  justify-content: center;
+}
+/* ソロモード時はプレイヤー側の盤面を大きく */
+#tetris-wrap.solo-mode #tetrisBoard {
+  height: min(60dvh, 480px);
+}
+@media (max-height: 720px){
+  #tetris-wrap.solo-mode #tetrisBoard{ height: min(52dvh, 420px); }
+}
+@media (max-height: 600px){
+  #tetris-wrap.solo-mode #tetrisBoard{ height: min(44dvh, 340px); }
+}
