@@ -30,6 +30,10 @@ CORS(app)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key')
 
+# ★管理者アカウントを 'admin' から 'spirit' へ移行。
+#   ここを1箇所変えるだけで管理者判定・全スキン無料付与などが全て切り替わる。
+ADMIN_USER_ID = 'spirit'
+
 DISCORD_WEBHOOK_AUTH = os.environ.get('DISCORD_WEBHOOK_AUTH', '')
 DISCORD_WEBHOOK_LOGIN = os.environ.get('DISCORD_WEBHOOK_LOGIN', '')
 DISCORD_WEBHOOK_FEATURE_REQUEST = os.environ.get(
@@ -1325,7 +1329,7 @@ def admin_command():
         user_id = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])['id']
     except Exception:
         return jsonify({'error': '認証エラー'}), 401
-    if user_id != 'admin':
+    if user_id != ADMIN_USER_ID:
         return jsonify({'error': '管理者権限がありません'}), 403
 
     body = request.get_json(silent=True) or {}
@@ -1592,7 +1596,7 @@ def admin_block_settings():
         return jsonify({'error': '認証が必要です'}), 401
     try:
         user_id = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])['id']
-        if user_id != 'admin':
+        if user_id != ADMIN_USER_ID:
             return jsonify({'error': '管理者権限がありません'}), 403
         rows = db_query('SELECT admin_settings FROM users WHERE id = %s', [user_id])
         settings = (rows[0].get('admin_settings') if rows else None) or {'disabledBlocks': [], 'safetyMode': False}
@@ -1608,7 +1612,7 @@ def admin_block_toggle():
         return jsonify({'error': '認証が必要です'}), 401
     try:
         user_id = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])['id']
-        if user_id != 'admin':
+        if user_id != ADMIN_USER_ID:
             return jsonify({'error': '管理者権限がありません'}), 403
         body = request.get_json(silent=True) or {}
         block_index = body.get('blockIndex')
@@ -1622,6 +1626,38 @@ def admin_block_toggle():
                 settings.setdefault('disabledBlocks', []).append(block_index)
         db_execute('UPDATE users SET admin_settings = %s WHERE id = %s', [json.dumps(settings), user_id])
         return jsonify({'success': True, 'settings': settings})
+    except Exception:
+        return jsonify({'error': '認証エラー'}), 401
+
+
+# ===================== 管理者には全スキンを無料で贈呈 =====================
+# スキンIDの「正式な一覧」はフロントエンド(script.js の SKINS/GACHA_SKINS、および
+# 模様入りスキンの自動生成)にしかない。そのため、通常のプロフィール同期(/api/profile)の
+# safe_skins チェック(ガチャ限定スキンを勝手に自称できないようにする仕組み)を迂回せず、
+# 管理者アカウント自身が「今のフロントエンドが把握している全スキンID」を送ってきた場合に
+# 限って、そのIDだけをまとめて所持済みにする専用エンドポイント。
+@app.post('/api/admin/grant-all-skins')
+def admin_grant_all_skins():
+    token = get_token_from_request()
+    if not token:
+        return jsonify({'error': '認証が必要です'}), 401
+    try:
+        user_id = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])['id']
+        if user_id != ADMIN_USER_ID:
+            return jsonify({'error': '管理者権限がありません'}), 403
+        body = request.get_json(silent=True) or {}
+        skin_ids = body.get('skinIds')
+        if not isinstance(skin_ids, list) or not skin_ids:
+            return jsonify({'error': 'skinIdsを指定してください'}), 400
+        skin_ids = [s for s in skin_ids if isinstance(s, str)][:2000]  # 念のため上限を設ける
+
+        rows = db_query('SELECT skins FROM users WHERE id = %s', [user_id])
+        if not rows:
+            return jsonify({'error': 'ユーザーが見つかりません'}), 404
+        existing_skins = json.loads((rows[0].get('skins')) or '["default"]')
+        merged = sorted(set(existing_skins) | set(skin_ids))
+        db_execute('UPDATE users SET skins = %s WHERE id = %s', [json.dumps(merged), user_id])
+        return jsonify({'success': True, 'skins': merged})
     except Exception:
         return jsonify({'error': '認証エラー'}), 401
 
