@@ -119,15 +119,15 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     easy: {
       label: '😊 簡単',
       desc: 'AIがミスを連発。のんびり遊べます。',
-      speed: 1500,       // 1手あたりの間隔(ms)
-      randomChance: 0.7, // ランダムで適当な手を選ぶ確率
-      weightScale: 0.3,  // 評価関数の重み倍率
-      noise: 50          // 評価に加えるランダムノイズ
+      speed: 320,        // ★1アクション(回転/移動/落下)あたりの間隔(ms)
+      randomChance: 0.7,
+      weightScale: 0.3,
+      noise: 50
     },
     normal: {
       label: '🙂 普通',
       desc: 'AIがたまにミスをします。',
-      speed: 900,
+      speed: 190,
       randomChance: 0.35,
       weightScale: 0.6,
       noise: 20
@@ -135,7 +135,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     hard: {
       label: '😤 難しい',
       desc: 'AIはほぼミスをしません。',
-      speed: 550,
+      speed: 110,
       randomChance: 0.1,
       weightScale: 0.9,
       noise: 5
@@ -143,7 +143,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     modern: {
       label: '🔥 現代最強',
       desc: '高速・完璧な判断。人間には厳しい。',
-      speed: 250,
+      speed: 60,
       randomChance: 0,
       weightScale: 1.0,
       noise: 0
@@ -151,7 +151,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
     history: {
       label: '👑 史上最強',
       desc: '1手先読みで最強。もう勝てません。',
-      speed: 80,
+      speed: 32,
       randomChance: 0,
       weightScale: 1.0,
       noise: 0,
@@ -4713,24 +4713,89 @@ function tetrisTriggerGameOver(){
     tetrisAiScoreEl.textContent = aiScore;
   }
 
+  // ===================== 🤖 AIの手を1手ずつ実行する =====================
+  // 以前は「最善手の位置へ瞬間移動→即ロック」というテレポートのような動きだった。
+  // ここでは回転・左右移動・ソフトドロップを1tickにつき1アクションずつ行い、
+  // 最後にハードドロップして人間らしい動きに見えるようにする。
+  let aiPlan = null;
+
+  function matrixKey(m){
+    return m.map(row => row.join('')).join('|');
+  }
+
   function aiTick(){
     if(!aiActive || aiGameOver) return;
     if(!aiPiece){
       if(!aiSpawnPiece()) return;
     }
-    const move = findBestAiMove();
-    if(!move){
-      aiTriggerGameOver();
+
+    // ピースごとに「どこに・どの向きで置くか」を最初に1回だけ決める
+    if(!aiPlan){
+      const move = findBestAiMove();
+      if(!move){
+        aiTriggerGameOver();
+        return;
+      }
+      aiPlan = {
+        targetMatrixKey: matrixKey(move.matrix),
+        targetCol: move.col,
+        softDropCount: 0
+      };
+    }
+
+    // 1. 回転フェーズ: 目標の向きになるまで1回ずつ回す
+    if(matrixKey(aiPiece.matrix) !== aiPlan.targetMatrixKey){
+      const rotated = rotateMatrixCW(aiPiece.matrix);
+      const kicks = [0, -1, 1, -2, 2];
+      let ok = false;
+      for(const k of kicks){
+        if(!aiCollides(rotated, aiPiece.row, aiPiece.col + k)){
+          aiPiece.matrix = rotated;
+          aiPiece.col += k;
+          ok = true;
+          break;
+        }
+      }
+      if(!ok){
+        // 回転できなかった(通常起きない) → 今の向きをゴール扱いにして先へ進む
+        aiPlan.targetMatrixKey = matrixKey(aiPiece.matrix);
+      }
+      renderAiBoard();
       return;
     }
-    // 一手で一気に配置
-    aiPiece.matrix = move.matrix;
-    aiPiece.row = move.row;
-    aiPiece.col = move.col;
+
+    // 2. 左右移動フェーズ: 目標の列まで1マスずつ
+    if(aiPiece.col < aiPlan.targetCol && !aiCollides(aiPiece.matrix, aiPiece.row, aiPiece.col + 1)){
+      aiPiece.col++;
+      renderAiBoard();
+      return;
+    }
+    if(aiPiece.col > aiPlan.targetCol && !aiCollides(aiPiece.matrix, aiPiece.row, aiPiece.col - 1)){
+      aiPiece.col--;
+      renderAiBoard();
+      return;
+    }
+
+    // 3. ソフトドロップ: 数回だけ落下を見せてからハードドロップ
+    const VISIBLE_SOFT_DROPS = 3;
+    if(aiPlan.softDropCount < VISIBLE_SOFT_DROPS
+       && !aiCollides(aiPiece.matrix, aiPiece.row + 1, aiPiece.col)){
+      aiPiece.row++;
+      aiPlan.softDropCount++;
+      renderAiBoard();
+      return;
+    }
+
+    // 4. ハードドロップで一気に落とす
+    while(!aiCollides(aiPiece.matrix, aiPiece.row + 1, aiPiece.col)){
+      aiPiece.row++;
+    }
     aiLockPiece();
+    aiPlan = null;
     renderAiBoard();
-    // 連続で次のピースを出す
-    if(!aiSpawnPiece()) return;
+    // 次のピースを出す
+    aiSpawnPiece();
+    renderAiBoard();
   }
 
   function startAi(){
