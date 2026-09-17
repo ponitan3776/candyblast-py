@@ -7,6 +7,8 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
   // ファイルは frontend/bgm/ の中に置く
   const MUSIC_LIBRARY = [
     { title:'月光 第1楽章', artist:'ベートーヴェン', file:'moonlight.mp3', category:'クラシック', emoji:'🌙' },
+    { title:'月が綺麗ねと言われたい！', artist:'柿崎ユウタ', file:'beautifulmoon.mp3', category:'その他', emoji:'🌙' },
+
     // 追加例:
     // { title:'〇〇', artist:'〇〇', file:'xxx.mp3', category:'ゲーム', emoji:'🎮' },
   ];
