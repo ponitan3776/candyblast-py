@@ -8,6 +8,7 @@ const API_BASE_URL = 'https://pinkyburst.onrender.com';
   const MUSIC_LIBRARY = [
     { title:'月光 第1楽章', artist:'ベートーヴェン', file:'moonlight.mp3', category:'クラシック', emoji:'🌙' },
     { title:'月が綺麗ねと言われたい！', artist:'柿崎ユウタ', file:'beautifulmoon.mp3', category:'その他', emoji:'🌙' },
+    { title:'マーシャル・マキシマイザー', artist:'柊マグネタイト', file:'marshallmaximizer.mp3', category:'その他', emoji:'🎰' },
 
     // 追加例:
     // { title:'〇〇', artist:'〇〇', file:'xxx.mp3', category:'ゲーム', emoji:'🎮' },
