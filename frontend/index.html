@@ -74,10 +74,15 @@
 
   <div id="tray"></div>
 
-  <div id="tetris-wrap">
-    <div class="tetris-layout">
-      <div id="tetrisBoard"></div>
-      <div class="tetris-side">
+<div id="tetris-wrap">
+    <div class="tetris-vs-layout">
+      <div class="tetris-vs-side">
+        <div class="tetris-vs-label you">👤 あなた</div>
+        <div id="tetrisBoard"></div>
+        <div class="tetris-vs-score"><span>SCORE</span><b id="tetrisPlayerScore">0</b></div>
+      </div>
+      <div class="tetris-hud">
+        <div class="vs-badge">VS</div>
         <div>
           <div class="tetris-next-label">HOLD</div>
           <div id="tetrisHoldBox"></div>
@@ -90,10 +95,17 @@
           <div>LEVEL<b id="tetrisLevel">1</b></div>
           <div>LINES<b id="tetrisLines">0</b></div>
         </div>
-        <div class="tetris-help-btn" id="tetrisHelpBtn">❓ 操作説明</div>
-        <div class="tetris-help-panel" id="tetrisHelpPanel"></div>
+      </div>
+      <div class="tetris-vs-side">
+        <div class="tetris-vs-label ai">🤖 AI</div>
+        <div id="tetrisAiBoard"></div>
+        <div class="tetris-vs-score"><span>SCORE</span><b id="tetrisAiScore">0</b></div>
       </div>
       <div class="combo-text" id="tetrisComboText"></div>
+    </div>
+    <div class="tetris-hud-bottom">
+      <div class="tetris-help-btn" id="tetrisHelpBtn">❓ 操作説明</div>
+      <div class="tetris-help-panel" id="tetrisHelpPanel"></div>
     </div>
     <div class="tetris-controls">
       <div class="tetris-btn hold" id="tBtnHold">⇄ HOLD</div>
