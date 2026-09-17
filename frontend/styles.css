@@ -506,3 +506,115 @@ transition: filter 0.2s ease;
   0%, 100%{ opacity:0.55; }
   50%{ opacity:1; }
 }
+
+/* ===================== テトリス VS AI ===================== */
+.tetris-vs-layout{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  align-items:flex-start;
+  width:100%;
+  position:relative;
+}
+.tetris-vs-side{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  flex-shrink:0;
+}
+.tetris-vs-label{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:0.5px;
+}
+.tetris-vs-label.you{ color:var(--mint); }
+.tetris-vs-label.ai{ color:var(--coral); }
+.tetris-vs-score{
+  font-family:'Baloo 2', sans-serif;
+  font-size:13px;
+  font-weight:700;
+  color:var(--gold);
+  display:flex;
+  gap:4px;
+  align-items:baseline;
+}
+.tetris-vs-score span{
+  font-size:9px;
+  color:var(--text-dim);
+  font-weight:700;
+  letter-spacing:0.5px;
+}
+.tetris-vs-score b{
+  font-size:15px;
+}
+
+#tetrisBoard, #tetrisAiBoard{
+  position:relative;
+  height: min(48dvh, 400px);
+  width: auto;
+  aspect-ratio:1/2;
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  grid-template-rows:repeat(20,1fr);
+  gap:2px;
+  background:var(--panel);
+  border-radius:16px;
+  padding:6px;
+  flex-shrink: 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+#tetrisAiBoard{
+  opacity:0.92;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 2px rgba(255,107,107,0.25);
+}
+#tetrisBoard{
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 2px rgba(61,220,151,0.25);
+}
+
+.tetris-hud{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  min-width:70px;
+  flex-shrink:0;
+  padding-top:6px;
+}
+.vs-badge{
+  font-family:'Baloo 2', sans-serif;
+  font-size:16px;
+  font-weight:800;
+  color:var(--gold);
+  background:linear-gradient(135deg, var(--gold), var(--coral));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-shadow:0 0 12px rgba(255,217,61,0.35);
+  padding:2px 0;
+}
+.tetris-hud-bottom{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  position:relative;
+}
+.tetris-hud-bottom .tetris-help-btn{
+  width:120px;
+}
+
+/* 縦が狭い画面用：盤面をさらに縮小 */
+@media (max-height: 720px){
+  #tetrisBoard, #tetrisAiBoard{ height: min(42dvh, 340px); }
+}
+@media (max-height: 600px){
+  #tetrisBoard, #tetrisAiBoard{ height: min(36dvh, 280px); }
+}
+
+/* 縦向きスマホ（幅が狭い）でも2枚並ぶように微調整 */
+@media (max-width: 420px){
+  .tetris-vs-layout{ gap:4px; }
+  .tetris-hud{ min-width:56px; gap:4px; }
+  #tetrisHoldBox, #tetrisNext{ width:56px; height:56px; padding:4px; }
+  .vs-badge{ font-size:14px; }
+}
