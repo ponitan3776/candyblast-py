@@ -11,12 +11,14 @@ import base64
 import random
 import string
 import secrets
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import jwt
 import bcrypt
 import requests
+import psycopg2
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from psycopg2 import pool as pg_pool
@@ -25,7 +27,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # ===================== 基本設定 =====================
 app = Flask(__name__)
-CORS(app)
+
+# GitHub Pages など、フロントエンドを置くオリジンだけに絞りたい場合は
+# 環境変数 ALLOWED_ORIGINS にカンマ区切りで指定する(例: https://ユーザー名.github.io)。
+# 未設定なら従来どおり全オリジン許可。
+_allowed = [o.strip() for o in os.environ.get('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS(app, origins=_allowed or '*')
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key')
@@ -36,44 +43,89 @@ ADMIN_USER_ID = 'spirit'
 
 DISCORD_WEBHOOK_AUTH = os.environ.get('DISCORD_WEBHOOK_AUTH', '')
 DISCORD_WEBHOOK_LOGIN = os.environ.get('DISCORD_WEBHOOK_LOGIN', '')
-DISCORD_WEBHOOK_FEATURE_REQUEST = os.environ.get(
-    'DISCORD_WEBHOOK_FEATURE_REQUEST',
-    'https://discord.com/api/webhooks/1546488875810164736/gLYm0_WRcHPplCzzTPQopBc4t0O5QqLmQx8q4MOZN9qQHjETpmwmi0jRHMgEWlQVPRC3'
-)
-DISCORD_WEBHOOK_BUG_REPORT = os.environ.get(
-    'DISCORD_WEBHOOK_BUG_REPORT',
-    'https://discord.com/api/webhooks/1546490249239334943/LTkNUk1oAk3jERMQRZMY9J5P9LaF7LbR2566ngGxJrct-OK7r0XTHnIcFvfaQi_641SD'
-)
+DISCORD_WEBHOOK_FEATURE_REQUEST = os.environ.get('DISCORD_WEBHOOK_FEATURE_REQUEST', '')
+DISCORD_WEBHOOK_BUG_REPORT = os.environ.get('DISCORD_WEBHOOK_BUG_REPORT', '')
 
 if not DATABASE_URL:
-    print('❌ 環境変数 DATABASE_URL が設定されていません。RenderのEnvironmentタブで設定してください。')
+    print('❌ 環境変数 DATABASE_URL が設定されていません。RenderのEnvironmentタブでSupabaseの接続文字列を設定してください。')
+if JWT_SECRET == 'your-secret-key':
+    print('⚠️ JWT_SECRET が未設定です。必ず推測されにくい値を環境変数に設定してください。')
 
-# ===================== DB接続プール =====================
-# Node版の pg.Pool 相当。Renderのマネージド Postgres は自己署名証明書を使うため
-# sslmode='require' を指定する(証明書の検証はしない = 元のNode版の rejectUnauthorized:false と同等)。
+# ===================== DB接続プール(Supabase Postgres) =====================
+# DATABASE_URL には Supabase の「Session pooler」または「Transaction pooler」の接続文字列を使う。
+# (Renderの無料プランはIPv4のみのため、IPv6専用の Direct connection は使えない)
+# Supabase は SSL 必須。プーラーが長時間アイドルの接続を切ることがあるため、
+# TCP keepalive を有効にし、切れた接続は捨てて1回だけ自動リトライする。
+DB_POOL_MAX = int(os.environ.get('DB_POOL_MAX', '10'))
 _pool = None
 if DATABASE_URL:
-    _pool = pg_pool.ThreadedConnectionPool(1, 20, dsn=DATABASE_URL, sslmode='require')
+    _pool = pg_pool.ThreadedConnectionPool(
+        1, DB_POOL_MAX, dsn=DATABASE_URL, sslmode='require', connect_timeout=10,
+        keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=5
+    )
+
+_CONN_ERRORS = (psycopg2.OperationalError, psycopg2.InterfaceError)
 
 
-def db_query(sql, params=None, fetch=True):
-    """psycopg2で1クエリを実行するショートカット。SELECT系はdictのリストを返す。"""
+def _release(conn, broken):
+    _pool.putconn(conn, close=bool(broken or conn.closed))
+
+
+def _run_query(sql, params, fetch):
     conn = _pool.getconn()
+    broken = False
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql, params or [])
             rows = cur.fetchall() if (fetch and cur.description is not None) else []
-            conn.commit()
-            return rows
+        conn.commit()
+        return rows
+    except _CONN_ERRORS:
+        broken = True
+        raise
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            broken = True
         raise
     finally:
-        _pool.putconn(conn)
+        _release(conn, broken)
+
+
+def db_query(sql, params=None, fetch=True):
+    """1クエリを実行するショートカット。SELECT系はdictのリストを返す。"""
+    try:
+        return _run_query(sql, params, fetch)
+    except _CONN_ERRORS:
+        return _run_query(sql, params, fetch)  # 切れた接続を捨てて1回だけ再試行
 
 
 def db_execute(sql, params=None):
     db_query(sql, params, fetch=False)
+
+
+@contextmanager
+def db_transaction():
+    """複数クエリを1トランザクションで実行する(SELECT ... FOR UPDATE で二重消費を防ぐ用)。
+    with ブロックを正常に抜けるとcommit、例外ならrollbackする。"""
+    conn = _pool.getconn()
+    broken = False
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            yield cur
+        conn.commit()
+    except _CONN_ERRORS:
+        broken = True
+        raise
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            broken = True
+        raise
+    finally:
+        _release(conn, broken)
 
 
 # ===================== Discord通知 =====================
@@ -279,6 +331,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS gacha_state JSONB DEFAULT '{"totalPul
         );
     """)
     print('✅ 週替わりチャレンジテーブル作成完了')
+
+    # Supabase では public スキーマのテーブルが Data API(anonキー)から見えうるため、
+    # 全テーブルでRLSを有効化(ポリシーなし = anon/authenticated は一切アクセス不可)。
+    # このサーバーは postgres ロールで直接接続するのでRLSの影響を受けない。
+    for t in ('users', 'chat_messages', 'friend_requests', 'friends', 'dm_messages',
+              'announcements', 'duels', 'scheduled_events', 'weekly_challenge',
+              'weekly_challenge_scores'):
+        db_execute(f'ALTER TABLE {t} ENABLE ROW LEVEL SECURITY;')
+    print('✅ RLS有効化完了')
 
 
 # ===================== 日本時間(JST)ヘルパー =====================
@@ -624,60 +685,77 @@ def gacha_state():
         return jsonify({'error': str(err) or 'サーバーエラー'}), 500
 
 
+def _gacha_roll_once(gs, owned_skins):
+    """1回分の抽選。gs と owned_skins をその場で更新し、結果dictを返す(コインの増減は呼び出し側)。"""
+    gs['totalPulls'] = (gs.get('totalPulls') or 0) + 1
+    gs['pityCounter'] = (gs.get('pityCounter') or 0) + 1
+
+    roll = random.random()
+    natural_win = roll < GACHA_RATE_PER_SKIN * len(GACHA_SKIN_IDS)
+    pity_win = (not natural_win) and gs['pityCounter'] >= GACHA_PITY_THRESHOLD
+    won_skin_id = random.choice(GACHA_SKIN_IDS) if (natural_win or pity_win) else None
+
+    if not won_skin_id:
+        return {'resultType': 'miss', 'skinId': None, 'coinsGained': GACHA_MISS_COINS, 'pityTriggered': False}
+
+    gs['pityCounter'] = 0
+    if won_skin_id in owned_skins:
+        return {'resultType': 'duplicate', 'skinId': won_skin_id,
+                'coinsGained': GACHA_DUPLICATE_COINS, 'pityTriggered': pity_win}
+    owned_skins.append(won_skin_id)
+    return {'resultType': 'win', 'skinId': won_skin_id, 'coinsGained': 0, 'pityTriggered': pity_win}
+
+
 @app.post('/api/gacha/pull')
 def gacha_pull():
+    """body: {"count": 1 | 10}(省略時は1)。無料チケットを先に使い、足りない分をコインで支払う。
+    10連は10回ぶん全額を払えるときだけ実行(途中で足りなくなることはない)。"""
     try:
         user_id = require_auth()
-        rows = db_query('SELECT coins, gacha_state, skins FROM users WHERE id = %s', [user_id])
-        if not rows:
-            raise ApiError('ユーザーが見つかりません', 404)
-        u = rows[0]
-        coins = int(u.get('coins') or 0)
-        gs = u.get('gacha_state') or {'totalPulls': 0, 'pityCounter': 0}
-        owned_skins = json.loads(u.get('skins') or '["default"]')
+        body = request.get_json(silent=True) or {}
+        try:
+            count = int(body.get('count') or 1)
+        except (TypeError, ValueError):
+            count = 0
+        if count not in (1, 10):
+            raise ApiError('回数が不正です', 400)
 
-        has_free_ticket = (gs.get('freeTickets') or 0) > 0
-        if not has_free_ticket and coins < GACHA_COST:
-            raise ApiError('コインが足りません', 400)
-        if has_free_ticket:
-            gs['freeTickets'] = (gs.get('freeTickets') or 0) - 1
-        else:
-            coins -= GACHA_COST
+        with db_transaction() as cur:
+            cur.execute('SELECT coins, gacha_state, skins FROM users WHERE id = %s FOR UPDATE', [user_id])
+            u = cur.fetchone()
+            if not u:
+                raise ApiError('ユーザーが見つかりません', 404)
+            coins = int(u.get('coins') or 0)
+            gs = u.get('gacha_state') or {'totalPulls': 0, 'pityCounter': 0}
+            owned_skins = json.loads(u.get('skins') or '[\"default\"]')
 
-        gs['totalPulls'] = (gs.get('totalPulls') or 0) + 1
-        gs['pityCounter'] = (gs.get('pityCounter') or 0) + 1
+            tickets = gs.get('freeTickets') or 0
+            tickets_used = min(tickets, count)
+            coins_needed = (count - tickets_used) * GACHA_COST
+            if coins < coins_needed:
+                raise ApiError('コインが足りません', 400)
+            coins -= coins_needed
+            gs['freeTickets'] = tickets - tickets_used
 
-        roll = random.random()
-        natural_win = roll < GACHA_RATE_PER_SKIN * len(GACHA_SKIN_IDS)
-        pity_win = (not natural_win) and gs['pityCounter'] >= GACHA_PITY_THRESHOLD
-        won_skin_id = random.choice(GACHA_SKIN_IDS) if (natural_win or pity_win) else None
+            results = []
+            for i in range(count):
+                r = _gacha_roll_once(gs, owned_skins)
+                r['usedFreeTicket'] = i < tickets_used
+                coins += r['coinsGained']
+                results.append(r)
 
-        result_type = 'miss'
-        coins_gained = 0
-        skin_id = None
-        if won_skin_id:
-            gs['pityCounter'] = 0
-            skin_id = won_skin_id
-            if won_skin_id in owned_skins:
-                result_type = 'duplicate'
-                coins_gained = GACHA_DUPLICATE_COINS
-                coins += GACHA_DUPLICATE_COINS
-            else:
-                result_type = 'win'
-                owned_skins.append(won_skin_id)
-        else:
-            coins_gained = GACHA_MISS_COINS
-            coins += GACHA_MISS_COINS
+            cur.execute('UPDATE users SET coins=%s, gacha_state=%s, skins=%s WHERE id=%s',
+                        [coins, json.dumps(gs), json.dumps(owned_skins), user_id])
 
-        db_execute('UPDATE users SET coins=%s, gacha_state=%s, skins=%s WHERE id=%s',
-                   [coins, json.dumps(gs), json.dumps(owned_skins), user_id])
-        return jsonify({
-            'resultType': result_type, 'skinId': skin_id, 'coinsGained': coins_gained,
-            'pityTriggered': pity_win, 'usedFreeTicket': has_free_ticket, 'coins': coins,
-            'totalPulls': gs['totalPulls'], 'pityCounter': gs['pityCounter'],
+        resp = {
+            'count': count, 'results': results, 'spentCoins': coins_needed, 'ticketsUsed': tickets_used,
+            'coins': coins, 'totalPulls': gs['totalPulls'], 'pityCounter': gs['pityCounter'],
             'pityThreshold': GACHA_PITY_THRESHOLD, 'freeTickets': gs.get('freeTickets', 0),
             'ownedSkins': owned_skins
-        })
+        }
+        if count == 1:
+            resp.update(results[0])  # 旧フロントとの互換(resultType, skinId, ... を直下にも置く)
+        return jsonify(resp)
     except ApiError as e:
         return jsonify({'error': e.message}), e.status
     except Exception as err:
@@ -750,6 +828,48 @@ def battlepass_claim():
         db_execute('UPDATE users SET coins=%s, battlepass_claimed=%s, gacha_state=%s WHERE id=%s',
                    [coins, json.dumps(claimed), json.dumps(gs), user_id])
         return jsonify({'ok': True, 'reward': reward, 'coins': coins, 'freeTickets': free_tickets})
+    except ApiError as e:
+        return jsonify({'error': e.message}), e.status
+    except Exception as err:
+        return jsonify({'error': str(err) or 'サーバーエラー'}), 500
+
+
+@app.post('/api/battlepass/claim-all')
+def battlepass_claim_all():
+    """到達済みで未受け取りの報酬を全部まとめて受け取る。"""
+    try:
+        user_id = require_auth()
+        with db_transaction() as cur:
+            cur.execute('SELECT coins, battlepass_xp, battlepass_claimed, gacha_state '
+                        'FROM users WHERE id = %s FOR UPDATE', [user_id])
+            u = cur.fetchone()
+            if not u:
+                raise ApiError('ユーザーが見つかりません', 404)
+            current_level = (u.get('battlepass_xp') or 0) // BATTLEPASS_XP_PER_LEVEL + 1
+            claimed = u.get('battlepass_claimed') or []
+            claimed_set = set(claimed)
+            pending = [lv for lv in range(1, current_level + 1) if lv not in claimed_set]
+            if not pending:
+                raise ApiError('受け取れる報酬がありません', 400)
+
+            total_coins = 0
+            total_tickets = 0
+            for lv in pending:
+                r = battle_pass_reward_for_level(lv)
+                if r['type'] == 'coins':
+                    total_coins += r['amount']
+                elif r['type'] == 'gacha_ticket':
+                    total_tickets += r['amount']
+
+            coins = int(u.get('coins') or 0) + total_coins
+            gs = u.get('gacha_state') or {'totalPulls': 0, 'pityCounter': 0}
+            gs['freeTickets'] = (gs.get('freeTickets') or 0) + total_tickets
+            claimed.extend(pending)
+            cur.execute('UPDATE users SET coins=%s, battlepass_claimed=%s, gacha_state=%s WHERE id=%s',
+                        [coins, json.dumps(claimed), json.dumps(gs), user_id])
+
+        return jsonify({'ok': True, 'claimedCount': len(pending), 'totalCoins': total_coins,
+                        'totalTickets': total_tickets, 'coins': coins, 'freeTickets': gs['freeTickets']})
     except ApiError as e:
         return jsonify({'error': e.message}), e.status
     except Exception as err:
@@ -1719,6 +1839,33 @@ def user_profile(user_id_param):
         return jsonify({'error': 'プロフィール取得エラー'}), 500
 
 
+# ===================== ヘルスチェック / スリープ対策 =====================
+@app.get('/healthz')
+def healthz():
+    """外部の監視サービス・GitHub Actions・フロントエンドからの起こす用。?db=1 でDBにも軽く触れる
+    (Supabaseの無料プランは1週間アクセスがないと一時停止されるため)。"""
+    if request.args.get('db'):
+        try:
+            db_query('SELECT 1')
+        except Exception as err:
+            return jsonify({'ok': False, 'error': str(err)}), 503
+    return jsonify({'ok': True})
+
+
+# Render が自動で設定する RENDER_EXTERNAL_URL(または SELF_PING_URL)宛てに10分ごとに自分でアクセスして、
+# 無料プランの「15分アクセスなしでスリープ」を防ぐ。
+SELF_PING_URL = os.environ.get('SELF_PING_URL') or os.environ.get('RENDER_EXTERNAL_URL') or ''
+
+
+def keep_alive_ping():
+    if not SELF_PING_URL:
+        return
+    try:
+        requests.get(SELF_PING_URL.rstrip('/') + '/healthz', timeout=20)
+    except Exception as err:
+        print(f'keep-alive ping 失敗: {err}')
+
+
 # ===================== 起動処理 =====================
 def start_app():
     try:
@@ -1732,6 +1879,8 @@ def start_app():
     scheduler = BackgroundScheduler(timezone='UTC')
     scheduler.add_job(run_event_scheduler, 'interval', seconds=60, id='event_scheduler')
     scheduler.add_job(run_weekly_challenge_scheduler, 'interval', seconds=60, id='weekly_challenge_scheduler')
+    if SELF_PING_URL:
+        scheduler.add_job(keep_alive_ping, 'interval', minutes=10, id='keep_alive')
     scheduler.start()
     # 起動直後にも一度実行しておく(未生成の週替わりチャレンジをすぐ生成するため)
     run_weekly_challenge_scheduler()
