@@ -5633,6 +5633,7 @@ const OTHER_GAMES = [
     { emoji:'⚫', name:'オセロ', desc:'白と黒の石をひっくり返して陣取り！', url:'https://black-white-jycg.onrender.com' },
     { emoji:'⚪', name:'五目並べ', desc:'縦・横・斜めに5つ並べたら勝ち！', url:'https://five-eye-line-up.onrender.com' },
     { emoji:'❌', name:'まるばつゲーム', desc:'3×3のマスで○×を並べる定番ゲーム', url:'https://tic-tac-toe-1ixl.onrender.com' },
+    { emoji:'🐢', name:'ウミガメのスープ', desc:'質問を重ねて、不思議な出来事の真相を推理しよう！', url:'https://chelonia.onrender.com' },
   ];
 
 function renderOtherGamesModal(){
@@ -5677,7 +5678,8 @@ function renderOtherGamesModal(){
       '🎰 ガチャに「10連」を追加(無料チケットがあれば先に消費)',
       '🎁 バトルパスに「まとめて受け取る」ボタンを追加',
       '💤 サーバー・画面がスリープしにくいように改善',
-      '🛠 GitHub Pages / Supabase に対応'
+      '🛠 GitHub Pages / Supabase に対応',
+      '🐢 「別のゲーム」にウミガメのスープを追加'
     ]},
     { version:'2.0.2', date:'2026-09-07', items:[
       '📮 設定画面に「ご要望・不具合報告」を新設。ご要望と不具合報告を分けて送信でき、不具合報告には画像を添付可能に',
