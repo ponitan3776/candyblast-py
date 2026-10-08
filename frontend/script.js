@@ -1,6 +1,7 @@
 (function(){
 
-const API_BASE_URL = 'https://pinkyburst.onrender.com';
+// バックエンドのURLは config.js で設定する(GitHub Pagesでもここを触らずに済む)
+const API_BASE_URL = String((window.CANDYBLAST_CONFIG && window.CANDYBLAST_CONFIG.API_BASE_URL) || 'https://pinkyburst.onrender.com').replace(/\/+$/, '');
 
 // ★管理者アカウントを 'admin' から 'spirit' へ移行(バックエンドのADMIN_USER_IDと合わせること)
 const ADMIN_USER_ID = 'spirit';
@@ -1291,6 +1292,11 @@ const PATTERN_LABELS = {
       return;
     }
     const pityPct = Math.min(100, Math.round((state.pityCounter / state.pityThreshold) * 100));
+    const tickets = state.freeTickets || 0;
+    const canOne = state.coins >= state.cost || tickets > 0;
+    const ticketsFor10 = Math.min(tickets, 10);
+    const coinsFor10 = (10 - ticketsFor10) * state.cost;
+    const canTen = state.coins >= coinsFor10;
     const gachaSkinCards = GACHA_SKINS.map(s=>`
       <div class="skin-swatches" style="margin-bottom:2px;">${buildPatternedColors(s.colors).slice(0,4).map(c=>`<span class="swatch" style="background:${c.bg}"></span>`).join('')}</div>
     `).join('');
@@ -1305,52 +1311,91 @@ const PATTERN_LABELS = {
         <div class="sub" style="margin-top:4px;">天井まで: ${state.pityCounter} / ${state.pityThreshold}回</div>
       </div>
       <div class="sub" style="margin:8px 0; text-align:center;">🪙 所持: ${formatNumber(state.coins)}${state.freeTickets>0 ? ` ／ 🎫 無料チケット: ${state.freeTickets}枚` : ''}</div>
-      <button class="primary-btn" id="gachaPullBtn" ${(state.coins<state.cost && !(state.freeTickets>0))?'disabled':''}>
-        ${state.freeTickets>0 ? '🎫 無料チケットで引く' : `🎰 ${formatNumber(state.cost)}コインで引く`}
-      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="primary-btn" data-gachacount="1" style="flex:1;" ${canOne?'':'disabled'}>
+          ${tickets>0 ? '🎫 チケットで1回' : `🎰 1回 (🪙${formatNumber(state.cost)})`}
+        </button>
+        <button class="primary-btn" data-gachacount="10" style="flex:1;" ${canTen?'':'disabled'}>
+          🎰 10連 (🪙${formatNumber(coinsFor10)}${ticketsFor10>0?` ＋🎫×${ticketsFor10}`:''})
+        </button>
+      </div>
       <div id="gachaResultArea" style="margin-top:10px;"></div>
     `;
     modalContent.innerHTML = html;
-    document.getElementById('gachaPullBtn').addEventListener('click', performGachaPull);
+    modalContent.querySelectorAll('[data-gachacount]').forEach(b=>{
+      b.addEventListener('click', ()=>performGachaPull(parseInt(b.dataset.gachacount)));
+    });
   }
 
-  async function performGachaPull(){
-    const btn = document.getElementById('gachaPullBtn');
+  function gachaSkinName(id){ return (GACHA_SKINS.find(s=>s.id===id) || {}).name || id; }
+
+  function gachaSingleResultHtml(r){
+    if(r.resultType === 'win'){
+      const skin = GACHA_SKINS.find(s=>s.id===r.skinId);
+      return `
+        <div class="quest-item" style="text-align:center; border:2px solid var(--gold);">
+          <div class="qtitle" style="font-size:16px;">${r.pityTriggered?'🎯 天井達成！':'🎉 大当たり！'}</div>
+          <div class="skin-swatches" style="justify-content:center; margin:8px 0;">${buildPatternedColors(skin.colors).map(c=>`<span class="swatch" style="background:${c.bg}"></span>`).join('')}</div>
+          <div style="font-weight:800;">${skin.name} を獲得しました！</div>
+        </div>`;
+    }
+    if(r.resultType === 'duplicate'){
+      return `<div class="quest-item" style="text-align:center;">
+        <div class="qtitle">${gachaSkinName(r.skinId)} が被りました…</div>
+        <div class="sub">代わりに 🪙${formatNumber(r.coinsGained)} を獲得しました。</div>
+      </div>`;
+    }
+    return `<div class="quest-item" style="text-align:center;">
+      <div class="qtitle">残念、ハズレ…</div>
+      <div class="sub">🪙${formatNumber(r.coinsGained)} を獲得しました。</div>
+    </div>`;
+  }
+
+  function gachaMultiResultHtml(results){
+    const wins = results.filter(r=>r.resultType==='win');
+    const dups = results.filter(r=>r.resultType==='duplicate');
+    const misses = results.filter(r=>r.resultType==='miss');
+    const refund = results.reduce((sum,r)=>sum+(r.coinsGained||0), 0);
+    const rows = results.map((r,i)=>{
+      let label, style = '';
+      if(r.resultType==='win'){
+        label = `${r.pityTriggered?'🎯':'🎉'} ${gachaSkinName(r.skinId)} 獲得！`;
+        style = 'color:var(--gold); font-weight:800;';
+      } else if(r.resultType==='duplicate'){
+        label = `🔁 ${gachaSkinName(r.skinId)} 被り (+🪙${formatNumber(r.coinsGained)})`;
+      } else {
+        label = `ハズレ (+🪙${formatNumber(r.coinsGained)})`;
+        style = 'opacity:.7;';
+      }
+      return `<div class="sub" style="${style} text-align:left; margin:2px 0;">${i+1}. ${label}</div>`;
+    }).join('');
+    return `<div class="quest-item" style="text-align:center; ${wins.length?'border:2px solid var(--gold);':''}">
+      <div class="qtitle" style="font-size:16px;">${wins.length?'🎉 ':''}10連結果</div>
+      <div class="sub" style="margin:4px 0 8px;">大当たり ${wins.length} ／ 被り ${dups.length} ／ ハズレ ${misses.length} ／ 還元 🪙${formatNumber(refund)}</div>
+      ${rows}
+    </div>`;
+  }
+
+  async function performGachaPull(count){
+    count = (count === 10) ? 10 : 1;
     const resultArea = document.getElementById('gachaResultArea');
-    btn.disabled = true;
+    const btns = modalContent.querySelectorAll('[data-gachacount]');
+    btns.forEach(b=>b.disabled = true);
     resultArea.innerHTML = `<div class="empty-hint">🎰 抽選中...</div>`;
     try{
       const res = await fetch(`${API_BASE_URL}/api/gacha/pull`, {
         method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authToken}` }
+        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authToken}` },
+        body: JSON.stringify({ count })
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || '抽選に失敗しました');
 
-      if(data.resultType === 'win'){
-        const skin = GACHA_SKINS.find(s=>s.id===data.skinId);
-        ownedSkins = data.ownedSkins;
-        saveSkinsData();
-        playSound('coin');
-        resultArea.innerHTML = `
-          <div class="quest-item" style="text-align:center; border:2px solid var(--gold);">
-            <div class="qtitle" style="font-size:16px;">${data.pityTriggered?'🎯 天井達成！':'🎉 大当たり！'}</div>
-            <div class="skin-swatches" style="justify-content:center; margin:8px 0;">${buildPatternedColors(skin.colors).map(c=>`<span class="swatch" style="background:${c.bg}"></span>`).join('')}</div>
-            <div style="font-weight:800;">${skin.name} を獲得しました！</div>
-          </div>`;
-      } else if(data.resultType === 'duplicate'){
-        playSound('coin');
-        const skin = GACHA_SKINS.find(s=>s.id===data.skinId);
-        resultArea.innerHTML = `<div class="quest-item" style="text-align:center;">
-          <div class="qtitle">${skin.name} が被りました…</div>
-          <div class="sub">代わりに 🪙${formatNumber(data.coinsGained)} を獲得しました。</div>
-        </div>`;
-      } else {
-        resultArea.innerHTML = `<div class="quest-item" style="text-align:center;">
-          <div class="qtitle">残念、ハズレ…</div>
-          <div class="sub">🪙${formatNumber(data.coinsGained)} を獲得しました。</div>
-        </div>`;
-      }
+      const results = (Array.isArray(data.results) && data.results.length) ? data.results : [data];
+      ownedSkins = data.ownedSkins;
+      saveSkinsData();
+      if(results.some(r=>r.resultType==='win' || r.resultType==='duplicate')) playSound('coin');
+      const resultHtml = (count === 1) ? gachaSingleResultHtml(results[0]) : gachaMultiResultHtml(results);
 
       coins = data.coins;
       updateCoinUI();
@@ -1358,11 +1403,11 @@ const PATTERN_LABELS = {
         coins: data.coins, totalPulls: data.totalPulls, pityCounter: data.pityCounter,
         pityThreshold: data.pityThreshold, cost: GACHA_COST_CLIENT, freeTickets: data.freeTickets, ownedSkins: data.ownedSkins
       });
-      // 結果表示だけは上のresultAreaに残したいので再度差し込む
-      document.getElementById('gachaResultArea').innerHTML = resultArea.innerHTML;
+      // 結果表示だけは再描画後も残したいので差し込み直す
+      document.getElementById('gachaResultArea').innerHTML = resultHtml;
     }catch(err){
       resultArea.innerHTML = `<div class="empty-hint">${err.message}</div>`;
-      btn.disabled = false;
+      btns.forEach(b=>b.disabled = false);
     }
   }
   const GACHA_COST_CLIENT = 300; // サーバー側のGACHA_COSTと合わせておくための表示用フォールバック
@@ -1397,12 +1442,15 @@ const PATTERN_LABELS = {
     return '???';
   }
 
-  function renderBattlePassModal(state){
+  function renderBattlePassModal(state, noticeHtml){
     if(!state){
       modalContent.innerHTML = `<h2 style="color:var(--gold);">🎫 バトルパス</h2><div class="empty-hint">読み込みに失敗しました。</div>`;
       return;
     }
     const pct = Math.round((state.xpIntoLevel / state.xpPerLevel) * 100);
+    const unclaimed = state.rewards.filter(r=>!r.claimed);
+    const totCoins = unclaimed.filter(r=>r.type==='coins').reduce((sum,r)=>sum+r.amount, 0);
+    const totTickets = unclaimed.filter(r=>r.type==='gacha_ticket').reduce((sum,r)=>sum+r.amount, 0);
     let html = `
       <h2 style="color:var(--gold);">🎫 バトルパス</h2>
       <div class="sub" style="margin-bottom:8px;">ゲームをプレイして経験値を貯めよう。レベル上限はなく、報酬は10レベルごとにループします。</div>
@@ -1411,6 +1459,12 @@ const PATTERN_LABELS = {
         <div class="quest-bar-bg" style="margin-top:8px;"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
         <div class="sub" style="margin-top:4px;">${state.xpIntoLevel} / ${state.xpPerLevel} XP</div>
       </div>
+      ${noticeHtml || ''}
+      <button class="primary-btn" id="bpClaimAllBtn" style="margin-top:10px;" ${unclaimed.length?'':'disabled'}>
+        ${unclaimed.length
+          ? `🎁 まとめて受け取る (${unclaimed.length}件: 🪙${formatNumber(totCoins)}${totTickets?` ＋🎫×${totTickets}`:''})`
+          : '🎁 受け取れる報酬はありません'}
+      </button>
       <h3 style="color:var(--mint); margin:14px 0 8px;">🎁 報酬一覧</h3>
     `;
     state.rewards.slice().reverse().forEach(r=>{
@@ -1426,6 +1480,33 @@ const PATTERN_LABELS = {
     modalContent.querySelectorAll('[data-bplevel]').forEach(btn=>{
       btn.addEventListener('click', ()=>claimBattlePassLevel(parseInt(btn.dataset.bplevel)));
     });
+    const claimAllBtn = document.getElementById('bpClaimAllBtn');
+    if(claimAllBtn) claimAllBtn.addEventListener('click', claimAllBattlePass);
+  }
+
+  async function claimAllBattlePass(){
+    const btn = document.getElementById('bpClaimAllBtn');
+    if(btn) btn.disabled = true;
+    try{
+      const res = await fetch(`${API_BASE_URL}/api/battlepass/claim-all`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error);
+      coins = data.coins;
+      updateCoinUI();
+      playSound('coin');
+      const state = await fetchBattlePassState();
+      const notice = `<div class="quest-item" style="text-align:center; border:2px solid var(--gold); margin-top:10px;">
+        <div class="qtitle">🎁 ${data.claimedCount}件まとめて受け取りました！</div>
+        <div class="sub">🪙${formatNumber(data.totalCoins)}${data.totalTickets?` ／ 🎫 ガチャ無料チケット×${data.totalTickets}`:''}</div>
+      </div>`;
+      renderBattlePassModal(state, notice);
+    }catch(err){
+      alert(err.message);
+      if(btn) btn.disabled = false;
+    }
   }
 
   async function claimBattlePassLevel(level){
@@ -5592,6 +5673,12 @@ function renderOtherGamesModal(){
 
   // ===================== 更新履歴 / バージョン表示 =====================
   const CHANGELOG = [
+    { version:'2.1.0', date:'2026-10-08', items:[
+      '🎰 ガチャに「10連」を追加(無料チケットがあれば先に消費)',
+      '🎁 バトルパスに「まとめて受け取る」ボタンを追加',
+      '💤 サーバー・画面がスリープしにくいように改善',
+      '🛠 GitHub Pages / Supabase に対応'
+    ]},
     { version:'2.0.2', date:'2026-09-07', items:[
       '📮 設定画面に「ご要望・不具合報告」を新設。ご要望と不具合報告を分けて送信でき、不具合報告には画像を添付可能に',
       '🐞 スキンが数秒後に元に戻ってしまうバグを修正',
@@ -5720,6 +5807,27 @@ function renderOtherGamesModal(){
     renderEventsModal();
     modalOverlay.classList.add('show');
   });
+
+  // ===================== 💤 スリープ対策 =====================
+  // ① サーバー(Render無料枠)が寝ていても、ページを開いた瞬間に起こしておく。開いている間も定期的に叩く。
+  function pingServer(){
+    fetch(`${API_BASE_URL}/healthz`, { cache:'no-store' }).catch(()=>{});
+  }
+  pingServer();
+  setInterval(()=>{ if(!document.hidden) pingServer(); }, 4 * 60 * 1000);
+
+  // ② 端末の画面が勝手に暗く/スリープしないようにする(Screen Wake Lock API。対応していないブラウザでは何もしない)
+  let wakeLockSentinel = null;
+  async function requestWakeLock(){
+    try{
+      if(!('wakeLock' in navigator) || document.hidden || wakeLockSentinel) return;
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+      wakeLockSentinel.addEventListener('release', ()=>{ wakeLockSentinel = null; });
+    }catch(err){ wakeLockSentinel = null; }
+  }
+  requestWakeLock();
+  ['pointerdown','keydown','touchstart'].forEach(ev=> document.addEventListener(ev, requestWakeLock, { passive:true }));
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ requestWakeLock(); pingServer(); } });
 
   // ===================== 初期化 =====================
 (async function start(){
